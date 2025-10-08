@@ -11,6 +11,18 @@ public class ServiceBusConnection
     public bool IsActive { get; set; }
 }
 
+public class DiscoveredServiceBusNamespace
+{
+    public string Name { get; set; } = string.Empty;
+    public string FullyQualifiedNamespace { get; set; } = string.Empty;
+    public string SubscriptionId { get; set; } = string.Empty;
+    public string SubscriptionName { get; set; } = string.Empty;
+    public string ResourceGroup { get; set; } = string.Empty;
+    public string Location { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+}
+
 public class ServiceBusQueue
 {
     public string Name { get; set; } = string.Empty;
