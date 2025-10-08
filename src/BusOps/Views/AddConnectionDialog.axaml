@@ -3,12 +3,12 @@
         xmlns:vm="using:BusOps.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="550"
         x:Class="BusOps.Views.AddConnectionDialog"
         x:DataType="vm:AddConnectionDialogViewModel"
         Title="Add Azure Service Bus Connection"
-        Width="500"
-        Height="400"
+        Width="600"
+        Height="550"
         WindowStartupLocation="CenterOwner"
         CanResize="False">
 
@@ -22,20 +22,153 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Content Area (empty for now) -->
-        <Border Grid.Row="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" 
-                BorderThickness="1" Padding="10">
-            <StackPanel>
-                <TextBlock Text="Connection details will be added here" 
-                          FontStyle="Italic"
-                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+        <!-- Content Area -->
+        <ScrollViewer Grid.Row="0">
+            <StackPanel Spacing="15">
+                
+                <!-- Discovery Section -->
+                <StackPanel Spacing="10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" 
+                                   Text="Discovered Azure Service Bus Namespaces" 
+                                   FontWeight="SemiBold" 
+                                   FontSize="14"/>
+                        
+                        <Button Grid.Column="1" 
+                                Content="Refresh" 
+                                Command="{Binding DiscoverNamespacesCommand}"
+                                IsEnabled="{Binding !IsDiscovering}"
+                                Padding="10,5"/>
+                    </Grid>
+
+                    <!-- Loading Indicator -->
+                    <Border IsVisible="{Binding IsDiscovering}" 
+                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            Padding="15"
+                            CornerRadius="4">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="🔄" FontSize="16"/>
+                            <TextBlock Text="Discovering Azure Service Bus namespaces..." 
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Error Message -->
+                    <Border IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Background="#FFF4CE"
+                            BorderBrush="#FFA500"
+                            BorderThickness="1"
+                            Padding="10"
+                            CornerRadius="4">
+                        <TextBlock Text="{Binding ErrorMessage}" 
+                                   Foreground="#CC7700"
+                                   TextWrapping="Wrap"/>
+                    </Border>
+
+                    <!-- Namespace List -->
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" 
+                            BorderThickness="1" 
+                            CornerRadius="4"
+                            MinHeight="120"
+                            MaxHeight="200">
+                        <ListBox ItemsSource="{Binding DiscoveredNamespaces}"
+                                 SelectedItem="{Binding SelectedNamespace}"
+                                 IsEnabled="{Binding !UseCustomConnectionString}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="5" Spacing="4">
+                                        <TextBlock Text="{Binding Name}" 
+                                                   FontWeight="SemiBold"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <TextBlock Text="{Binding SubscriptionName}" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <TextBlock Text="•" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <TextBlock Text="{Binding ResourceGroup}" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <TextBlock Text="•" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <TextBlock Text="{Binding Location}" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <TextBlock Text="•" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                            <TextBlock Text="{Binding Sku}" 
+                                                       FontSize="11"
+                                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+                </StackPanel>
+
+                <!-- Separator -->
+                <Separator/>
+
+                <!-- Custom Connection String Option -->
+                <StackPanel Spacing="8">
+                    <CheckBox Content="Use custom connection string" 
+                              IsChecked="{Binding UseCustomConnectionString}"/>
+                    
+                    <TextBox IsVisible="{Binding UseCustomConnectionString}"
+                             Text="{Binding CustomConnectionString}"
+                             Watermark="Endpoint=sb://...;SharedAccessKeyName=...;SharedAccessKey=..."
+                             TextWrapping="Wrap"
+                             MinHeight="60"/>
+                </StackPanel>
+
+                <!-- Separator -->
+                <Separator/>
+
+                <!-- Connection Details -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Connection Details" 
+                               FontWeight="SemiBold" 
+                               FontSize="14"/>
+                    
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Connection Name *"/>
+                        <TextBox Text="{Binding ConnectionName}"
+                                 Watermark="Enter a friendly name for this connection"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="Description (Optional)"/>
+                        <TextBox Text="{Binding Description}"
+                                 Watermark="Optional description"
+                                 TextWrapping="Wrap"
+                                 MinHeight="60"/>
+                    </StackPanel>
+                </StackPanel>
+
             </StackPanel>
-        </Border>
+        </ScrollViewer>
 
         <!-- Button Panel -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Name="AddButton" Content="Add" Width="80" Margin="0,0,10,0" />
-            <Button Name="CancelButton" Content="Cancel" Width="80" />
+            <Button Name="AddButton" 
+                    Content="Add" 
+                    Width="80" 
+                    Margin="0,0,10,0"
+                    Command="{Binding AddCommand}"/>
+            <Button Name="CancelButton" 
+                    Content="Cancel" 
+                    Width="80"
+                    Command="{Binding CancelCommand}"/>
         </StackPanel>
     </Grid>
 

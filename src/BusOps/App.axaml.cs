@@ -4,10 +4,10 @@ using Avalonia.Markup.Xaml;
 using BusOps.Views;
 using BusOps.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Serilog;
+using BusOps.Core.Interfaces;
+using BusOps.Azure.Services;
 
 namespace BusOps;
 
@@ -51,8 +51,12 @@ public partial class App : Application
         
         services.AddLogging(builder => builder.AddSerilog());
 
+        // Core Services
+        services.AddSingleton<IServiceBusConnectionService, AzureServiceBusConnectionService>();
+
         // Views and ViewModels
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainWindowViewModel>();
+        services.AddTransient<AddConnectionDialogViewModel>();
     }
 }

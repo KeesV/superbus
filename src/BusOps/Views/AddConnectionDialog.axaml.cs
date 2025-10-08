@@ -7,10 +7,14 @@ namespace BusOps.Views;
 
 public partial class AddConnectionDialog : Window
 {
-    public AddConnectionDialog()
+    private readonly AddConnectionDialogViewModel _viewModel;
+
+    public AddConnectionDialog(AddConnectionDialogViewModel viewModel)
     {
+        _viewModel = viewModel;
+        
         InitializeComponent();
-        DataContext = new AddConnectionDialogViewModel();
+        DataContext = _viewModel;
         
         // Wire up button events
         var addButton = this.FindControl<Button>("AddButton");
@@ -27,24 +31,22 @@ public partial class AddConnectionDialog : Window
         }
     }
 
-    public AddConnectionDialog(AddConnectionDialogViewModel viewModel) : this()
-    {
-        DataContext = viewModel;
-    }
-
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
-    private void AddButton_Click(object? sender, RoutedEventArgs e)
+    private async void AddButton_Click(object? sender, RoutedEventArgs e)
     {
-        // TODO: Validate and save connection
-        Close(true);
+        var success = await _viewModel.SaveConnectionAsync();
+        if (success)
+        {
+            Close(_viewModel.CreatedConnection);
+        }
     }
 
     private void CancelButton_Click(object? sender, RoutedEventArgs e)
     {
-        Close(false);
+        Close(null);
     }
 }
