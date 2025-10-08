@@ -1,0 +1,26 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.cache
+*.log
+logs/
+.DS_Store
+Thumbs.db
+
+# Avalonia
+*.app
+*.deb
+*.rpm
+*.msi
+*.dmg
+
+# JetBrains
+.idea/
+
+# User-specific files
+appsettings.Development.json
+appsettings.local.json
+connections.json

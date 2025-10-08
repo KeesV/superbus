@@ -1,0 +1,111 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:BusOps.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="BusOps.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="BusOps - Azure Service Bus Management"
+        Width="1200"
+        Height="800">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Connection" />
+                <MenuItem Header="_Open Configuration" />
+                <Separator />
+                <MenuItem Header="E_xit" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Queues" />
+                <MenuItem Header="_Topics" />
+                <MenuItem Header="_Subscriptions" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" />
+            </MenuItem>
+        </Menu>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left Panel - Navigation -->
+            <Border Grid.Column="0" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" 
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" 
+                    BorderThickness="0,0,1,0">
+                <StackPanel Margin="10">
+                    <TextBlock Text="Connections" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Button Content="+ Add Connection" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+                    <ListBox Name="ConnectionsList" Height="200">
+                        <!-- Connection items will be populated here -->
+                    </ListBox>
+                    
+                    <TextBlock Text="Service Bus Entities" FontWeight="Bold" Margin="0,20,0,10"/>
+                    <TreeView Name="EntitiesTree" Height="300">
+                        <!-- Service Bus entities will be populated here -->
+                    </TreeView>
+                </StackPanel>
+            </Border>
+
+            <!-- Right Panel - Main Content -->
+            <Grid Grid.Column="1" Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Toolbar -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button Content="Refresh" Margin="0,0,5,0"/>
+                    <Button Content="Create Queue" Margin="0,0,5,0"/>
+                    <Button Content="Create Topic" Margin="0,0,5,0"/>
+                    <Button Content="Send Message" Margin="0,0,5,0"/>
+                </StackPanel>
+
+                <!-- Content Area -->
+                <TabControl Grid.Row="1" Name="MainTabView">
+                    <TabItem Header="Welcome">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="Welcome to BusOps" FontSize="24" FontWeight="Bold" 
+                                     HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                            <TextBlock Text="Azure Service Bus Management Tool" FontSize="16" 
+                                     HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                            <Button Content="Create Your First Connection" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" 
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" 
+                BorderThickness="0,1,0,0" Padding="10,5">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Ready" Name="StatusText"/>
+                <TextBlock Text=" | " Margin="10,0"/>
+                <TextBlock Text="No active connections" Name="ConnectionStatus"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+
+</Window>
