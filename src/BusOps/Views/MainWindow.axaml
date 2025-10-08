@@ -54,7 +54,10 @@
                     BorderThickness="0,0,1,0">
                 <StackPanel Margin="10">
                     <TextBlock Text="Connections" FontWeight="Bold" Margin="0,0,0,10"/>
-                    <Button Content="+ Add Connection" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+                    <Button Content="+ Add Connection" 
+                            HorizontalAlignment="Stretch" 
+                            Margin="0,0,0,10"
+                            Command="{Binding AddConnectionCommand}"/>
                     <ListBox Name="ConnectionsList" Height="200">
                         <!-- Connection items will be populated here -->
                     </ListBox>
