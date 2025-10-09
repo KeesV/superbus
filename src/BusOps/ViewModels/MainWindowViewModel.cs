@@ -22,6 +22,7 @@ public class MainWindowViewModel : ReactiveObject
     private int _maxMessagesToShow = 100;
     private bool _isLoadingMessages;
     private string _currentConnectionString = string.Empty;
+    private ServiceBusMessage? _selectedMessage;
 
     public string Greeting
     {
@@ -63,6 +64,12 @@ public class MainWindowViewModel : ReactiveObject
     {
         get => _isLoadingMessages;
         set => this.RaiseAndSetIfChanged(ref _isLoadingMessages, value);
+    }
+
+    public ServiceBusMessage? SelectedMessage
+    {
+        get => _selectedMessage;
+        set => this.RaiseAndSetIfChanged(ref _selectedMessage, value);
     }
 
     public bool HasMessages => Messages.Count > 0;
