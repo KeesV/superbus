@@ -128,6 +128,7 @@ public class MainWindowViewModel : ReactiveObject
             {
                 Name = "Queues",
                 Type = "Folder",
+                MessageCount = queues.Count,
                 IsExpanded = true
             };
 
@@ -150,6 +151,7 @@ public class MainWindowViewModel : ReactiveObject
             {
                 Name = "Topics",
                 Type = "Folder",
+                MessageCount = topics.Count,
                 IsExpanded = true
             };
 

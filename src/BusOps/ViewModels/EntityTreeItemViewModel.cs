@@ -39,8 +39,6 @@ public class EntityTreeItemViewModel : ReactiveObject
 
     public ObservableCollection<EntityTreeItemViewModel> Children { get; } = new();
 
-    public string DisplayText => MessageCount > 0 
-        ? $"{Name} ({MessageCount})" 
-        : Name;
+    public string DisplayText => $"{Name} ({MessageCount})";
 }
 
