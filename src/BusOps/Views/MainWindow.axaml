@@ -178,18 +178,146 @@
                     <Button Content="Send Message" Margin="0,0,5,0"/>
                 </StackPanel>
     
-                <!-- Content Area -->
-                <TabControl Grid.Row="1" Name="MainTabView">
-                    <TabItem Header="Welcome">
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <TextBlock Text="Welcome to BusOps" FontSize="24" FontWeight="Bold"
-                                     HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                            <TextBlock Text="Azure Service Bus Management Tool" FontSize="16"
-                                     HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                            <Button Content="Create Your First Connection" HorizontalAlignment="Center"/>
-                        </StackPanel>
-                    </TabItem>
-                </TabControl>
+                <!-- Welcome Screen - Shown when no entities are loaded -->
+                <Border Grid.Row="1" IsVisible="{Binding !HasEntities}">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                        <TextBlock Text="Welcome to BusOps" FontSize="24" FontWeight="Bold"
+                                 HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                        <TextBlock Text="Azure Service Bus Management Tool" FontSize="16"
+                                 HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                        <Button Content="Create Your First Connection" 
+                                HorizontalAlignment="Center"
+                                Command="{Binding AddConnectionCommand}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Master-Detail View - Shown when entities are loaded -->
+                <Grid Grid.Row="1" IsVisible="{Binding HasEntities}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="5"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Master: Entity List -->
+                    <Border Grid.Row="0" 
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" 
+                                       Text="Entity Details" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="16"
+                                       Margin="0,0,0,10"/>
+
+                            <ScrollViewer Grid.Row="1">
+                                <StackPanel>
+                                    <!-- Entity Information -->
+                                    <Grid IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Row="0" Grid.Column="0" 
+                                                   Text="Name:" 
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,5"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" 
+                                                   Text="{Binding SelectedEntity.Name}"
+                                                   Margin="0,0,0,5"/>
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" 
+                                                   Text="Type:" 
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,5"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" 
+                                                   Text="{Binding SelectedEntity.Type}"
+                                                   Margin="0,0,0,5"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" 
+                                                   Text="Message Count:" 
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,5"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" 
+                                                   Text="{Binding SelectedEntity.MessageCount}"
+                                                   Margin="0,0,0,5"/>
+
+                                        <!-- Action Buttons -->
+                                        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+                                                    Orientation="Horizontal" 
+                                                    Margin="0,20,0,0">
+                                            <Button Content="Peek Messages" Margin="0,0,5,0"/>
+                                            <Button Content="Send Message" Margin="0,0,5,0"/>
+                                            <Button Content="Delete" Margin="0,0,5,0"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- No Selection Message -->
+                                    <TextBlock IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNull}}"
+                                               Text="Select an entity from the tree to view details"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <!-- GridSplitter for resizing master/detail -->
+                    <GridSplitter Grid.Row="1" 
+                                  Height="5"
+                                  Background="Transparent"
+                                  ResizeDirection="Rows"
+                                  HorizontalAlignment="Stretch"/>
+
+                    <!-- Detail: Messages View -->
+                    <Border Grid.Row="2"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4"
+                            Padding="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" 
+                                       Text="Messages" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="16"
+                                       Margin="0,0,0,10"/>
+
+                            <DataGrid Grid.Row="1"
+                                      IsReadOnly="True"
+                                      GridLinesVisibility="All"
+                                      BorderThickness="1"
+                                      BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Sequence #" Width="Auto"/>
+                                    <DataGridTextColumn Header="Message ID" Width="*"/>
+                                    <DataGridTextColumn Header="Size" Width="80"/>
+                                    <DataGridTextColumn Header="Enqueued Time" Width="150"/>
+                                    <DataGridTextColumn Header="State" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+                </Grid>
             </Grid>
         </Grid>
     

@@ -9,6 +9,7 @@ namespace BusOps.Views;
 public partial class MainWindow : Window
 {
     private readonly IServiceProvider _serviceProvider = null!;
+    private MainWindowViewModel? _viewModel;
 
     public MainWindow()
     {
@@ -18,11 +19,19 @@ public partial class MainWindow : Window
     public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider) : this()
     {
         _serviceProvider = serviceProvider;
+        _viewModel = viewModel;
         DataContext = viewModel;
         
         // Set the dialog opening delegate
         viewModel.ShowAddConnectionDialog = ShowAddConnectionDialog;
         viewModel.ShowErrorDialog = ShowErrorDialog;
+        
+        // Wire up the TreeView selection changed event
+        var entitiesTree = this.FindControl<TreeView>("EntitiesTree");
+        if (entitiesTree != null)
+        {
+            entitiesTree.SelectionChanged += OnEntityTreeSelectionChanged;
+        }
     }
 
     private void InitializeComponent()
@@ -49,5 +58,13 @@ public partial class MainWindow : Window
         var dialogViewModel = ErrorDialogViewModel.FromException(title, exception);
         var dialog = new ErrorDialog(dialogViewModel);
         await dialog.ShowDialog(this);
+    }
+
+    private void OnEntityTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_viewModel != null && sender is TreeView treeView && treeView.SelectedItem is EntityTreeItemViewModel selectedEntity)
+        {
+            _viewModel.SelectedEntity = selectedEntity;
+        }
     }
 }

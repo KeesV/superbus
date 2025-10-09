@@ -15,6 +15,8 @@ public class MainWindowViewModel : ReactiveObject
     private string _greeting = "Welcome to BusOps!";
     private string _statusText = "Ready";
     private string _connectionStatus = "No active connections";
+    private bool _hasEntities;
+    private EntityTreeItemViewModel? _selectedEntity;
 
     public string Greeting
     {
@@ -32,6 +34,18 @@ public class MainWindowViewModel : ReactiveObject
     {
         get => _connectionStatus;
         set => this.RaiseAndSetIfChanged(ref _connectionStatus, value);
+    }
+
+    public bool HasEntities
+    {
+        get => _hasEntities;
+        set => this.RaiseAndSetIfChanged(ref _hasEntities, value);
+    }
+
+    public EntityTreeItemViewModel? SelectedEntity
+    {
+        get => _selectedEntity;
+        set => this.RaiseAndSetIfChanged(ref _selectedEntity, value);
     }
 
     public ObservableCollection<ConnectionItemViewModel> Connections { get; } = new();
@@ -179,6 +193,8 @@ public class MainWindowViewModel : ReactiveObject
             }
 
             Entities.Add(topicsNode);
+
+            HasEntities = Entities.Count > 0;
 
             StatusText = "Ready";
             _logger.LogInformation("Successfully loaded {QueueCount} queues and {TopicCount} topics", 
