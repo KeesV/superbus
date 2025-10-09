@@ -284,8 +284,12 @@ public class MainWindowViewModel : ReactiveObject
 
     private async Task LoadMessagesForSelectedEntityAsync()
     {
+        _logger.LogInformation("LoadMessagesForSelectedEntityAsync called. SelectedEntity: {EntityName}, Type: {EntityType}", 
+            SelectedEntity?.Name ?? "null", SelectedEntity?.Type ?? "null");
+            
         if (SelectedEntity == null || string.IsNullOrEmpty(_currentConnectionString))
         {
+            _logger.LogInformation("Clearing messages - SelectedEntity is null or no connection string");
             Messages.Clear();
             return;
         }
@@ -293,6 +297,7 @@ public class MainWindowViewModel : ReactiveObject
         // Only load messages for Queue or Subscription entities, not folders or topics
         if (SelectedEntity.Type != "Queue" && SelectedEntity.Type != "Subscription")
         {
+            _logger.LogInformation("Clearing messages - Selected entity type is {Type}, not a Queue or Subscription", SelectedEntity.Type);
             Messages.Clear();
             return;
         }
@@ -302,6 +307,8 @@ public class MainWindowViewModel : ReactiveObject
             IsLoadingMessages = true;
             StatusText = $"Loading messages from {SelectedEntity.Name}...";
             Messages.Clear();
+            
+            _logger.LogInformation("Messages collection cleared. About to fetch messages...");
 
             IEnumerable<ServiceBusMessage> messages;
 
@@ -335,10 +342,18 @@ public class MainWindowViewModel : ReactiveObject
                     peekOnly: true);
             }
 
-            foreach (var message in messages)
+            var messagesList = messages.ToList();
+            _logger.LogInformation("Received {Count} messages from service", messagesList.Count);
+            
+            foreach (var message in messagesList)
             {
+                _logger.LogDebug("Adding message: ID={MessageId}, Seq={SequenceNumber}", 
+                    message.MessageId, message.SequenceNumber);
                 Messages.Add(message);
             }
+            
+            _logger.LogInformation("Messages collection now has {Count} items. HasMessages={HasMessages}", 
+                Messages.Count, HasMessages);
 
             StatusText = $"Loaded {Messages.Count} messages";
             _logger.LogInformation("Successfully loaded {Count} messages", Messages.Count);
@@ -357,6 +372,8 @@ public class MainWindowViewModel : ReactiveObject
         finally
         {
             IsLoadingMessages = false;
+            _logger.LogInformation("IsLoadingMessages set to false. Final state - Messages.Count: {Count}, HasMessages: {HasMessages}, ShowNoMessagesForEntity: {ShowNoMessages}", 
+                Messages.Count, HasMessages, ShowNoMessagesForEntity);
         }
     }
 

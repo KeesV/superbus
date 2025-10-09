@@ -3,7 +3,6 @@
         xmlns:vm="using:BusOps.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="BusOps.Views.MainWindow"
         x:CompileBindings="False"
@@ -205,15 +204,7 @@
 
                 <!-- Master-Detail View - Shown when entities are loaded -->
                 <Grid Grid.Row="1" IsVisible="{Binding HasEntities}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="5"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Master: Entity List -->
-                    <Border Grid.Row="0" 
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                             BorderThickness="1"
                             CornerRadius="4"
                             Padding="10">
@@ -229,120 +220,78 @@
                                        FontSize="16"
                                        Margin="0,0,0,10"/>
 
-                            <ScrollViewer Grid.Row="1">
-                                <StackPanel>
-                                    <!-- Loading Indicator -->
-                                    <TextBlock IsVisible="{Binding IsLoadingMessages}"
-                                               Text="Loading messages..."
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Margin="0,20"/>
+                            <Grid Grid.Row="1">
+                                <!-- Loading Indicator -->
+                                <TextBlock IsVisible="{Binding IsLoadingMessages}"
+                                           Text="Loading messages..."
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
 
-                                    <!-- No Selection Message - show when SelectedEntity is null -->
-                                    <TextBlock Text="Select a queue or subscription from the tree to view messages"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Margin="0,20"
-                                               IsVisible="{Binding ShowNoSelectionMessage}"/>
+                                <!-- No Selection Message - show when SelectedEntity is null -->
+                                <TextBlock Text="Select a queue or subscription from the tree to view messages"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="20"
+                                           IsVisible="{Binding ShowNoSelectionMessage}"/>
 
-                                    <!-- Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription -->
-                                    <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Margin="0,20"
-                                               IsVisible="{Binding ShowNonMessageableEntityMessage}"/>
+                                <!-- Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription -->
+                                <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           Margin="20"
+                                           IsVisible="{Binding ShowNonMessageableEntityMessage}"/>
 
-                                    <!-- Messages Table -->
-                                    <DataGrid ItemsSource="{Binding Messages, Mode=OneWay}"
-                                              IsReadOnly="True"
-                                              GridLinesVisibility="All"
-                                              BorderThickness="1"
-                                              AutoGenerateColumns="False"
-                                              CanUserResizeColumns="True"
-                                              CanUserSortColumns="True"
-                                              MinHeight="200"
-                                              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-                                        <DataGrid.IsVisible>
-                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
-                                                <Binding Path="!IsLoadingMessages"/>
-                                                <Binding Path="HasMessages"/>
-                                            </MultiBinding>
-                                        </DataGrid.IsVisible>
-                                        <DataGrid.Columns>
-                                            <DataGridTextColumn Header="Sequence #" 
-                                                                Binding="{Binding SequenceNumber}" 
-                                                                Width="Auto"/>
-                                            <DataGridTextColumn Header="Message ID" 
-                                                                Binding="{Binding MessageId}" 
-                                                                Width="200"/>
-                                            <DataGridTextColumn Header="Enqueued Time" 
-                                                                Binding="{Binding EnqueuedTime, StringFormat='{}{0:g}'}" 
-                                                                Width="150"/>
-                                            <DataGridTextColumn Header="Delivery Count" 
-                                                                Binding="{Binding DeliveryCount}" 
-                                                                Width="100"/>
-                                            <DataGridTextColumn Header="Label" 
-                                                                Binding="{Binding Label}" 
-                                                                Width="150"/>
-                                            <DataGridTextColumn Header="Correlation ID" 
-                                                                Binding="{Binding CorrelationId}" 
-                                                                Width="150"/>
-                                        </DataGrid.Columns>
-                                    </DataGrid>
+                                <!-- Messages Table -->
+                                <DataGrid ItemsSource="{Binding Messages}"
+                                          IsReadOnly="True"
+                                          GridLinesVisibility="All"
+                                          BorderThickness="1"
+                                          AutoGenerateColumns="False"
+                                          CanUserResizeColumns="True"
+                                          CanUserSortColumns="True"
+                                          BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center">
+                                    <DataGrid.IsVisible>
+                                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                            <Binding Path="!IsLoadingMessages"/>
+                                            <Binding Path="HasMessages"/>
+                                        </MultiBinding>
+                                    </DataGrid.IsVisible>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Sequence #"
+                                                            Binding="{Binding SequenceNumber}"
+                                                            Width="100"/>
+                                        <DataGridTextColumn Header="Message ID"
+                                                            Binding="{Binding MessageId}"
+                                                            Width="250"/>
+                                        <DataGridTextColumn Header="Enqueued Time"
+                                                            Binding="{Binding EnqueuedTime, StringFormat='{}{0:g}'}"
+                                                            Width="150"/>
+                                        <DataGridTextColumn Header="Delivery Count"
+                                                            Binding="{Binding DeliveryCount}"
+                                                            Width="120"/>
+                                        <DataGridTextColumn Header="Label"
+                                                            Binding="{Binding Label}"
+                                                            Width="150"/>
+                                        <DataGridTextColumn Header="Correlation ID"
+                                                            Binding="{Binding CorrelationId}"
+                                                            Width="200"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                                    <!-- No Messages Message - only for queues/subscriptions with 0 messages -->
-                                    <TextBlock Text="No messages found in this queue/subscription"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               Margin="0,20"
-                                               IsVisible="{Binding ShowNoMessagesForEntity}"/>
-                                </StackPanel>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
-
-                    <!-- GridSplitter for resizing master/detail -->
-                    <GridSplitter Grid.Row="1" 
-                                  Height="5"
-                                  Background="Transparent"
-                                  ResizeDirection="Rows"
-                                  HorizontalAlignment="Stretch"/>
-
-                    <!-- Detail: Messages View -->
-                    <Border Grid.Row="2"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="1"
-                            CornerRadius="4"
-                            Padding="10">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <TextBlock Grid.Row="0" 
-                                       Text="Messages" 
-                                       FontWeight="SemiBold" 
-                                       FontSize="16"
-                                       Margin="0,0,0,10"/>
-
-                            <DataGrid Grid.Row="1"
-                                      IsReadOnly="True"
-                                      GridLinesVisibility="All"
-                                      BorderThickness="1"
-                                      BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Sequence #" Width="Auto"/>
-                                    <DataGridTextColumn Header="Message ID" Width="*"/>
-                                    <DataGridTextColumn Header="Size" Width="80"/>
-                                    <DataGridTextColumn Header="Enqueued Time" Width="150"/>
-                                    <DataGridTextColumn Header="State" Width="100"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                                <!-- No Messages Message - only for queues/subscriptions with 0 messages -->
+                                <TextBlock Text="No messages found in this queue/subscription"
+                                           Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           IsVisible="{Binding ShowNoMessagesForEntity}"/>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>
@@ -362,4 +311,3 @@
     </Grid>
 
 </Window>
-
