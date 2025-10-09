@@ -1,5 +1,6 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Azure.Identity;
 using BusOps.Core.Interfaces;
 using BusOps.Core.Models;
 using Microsoft.Extensions.Logging;
@@ -40,8 +41,28 @@ public class AzureServiceBusManagementService : IServiceBusManagementService, ID
         try
         {
             _connectionString = connectionString;
-            _adminClient = new ServiceBusAdministrationClient(connectionString);
-            _client = new ServiceBusClient(connectionString);
+            
+            // Determine if input is a connection string or FQDN
+            if (IsConnectionString(connectionString))
+            {
+                // Traditional connection string authentication
+                _adminClient = new ServiceBusAdministrationClient(connectionString);
+                _client = new ServiceBusClient(connectionString);
+                
+                _logger.LogInformation("Connecting to Azure Service Bus using connection string");
+            }
+            else
+            {
+                // FQDN with DefaultAzureCredential
+                var fullyQualifiedNamespace = EnsureFullyQualifiedNamespace(connectionString);
+                var credential = new DefaultAzureCredential();
+                
+                _adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, credential);
+                _client = new ServiceBusClient(fullyQualifiedNamespace, credential);
+                
+                _logger.LogInformation("Connecting to Azure Service Bus using DefaultAzureCredential for namespace: {Namespace}", 
+                    fullyQualifiedNamespace);
+            }
 
             // Test the connection by trying to get namespace info
             var namespaceProperties = await _adminClient.GetNamespacePropertiesAsync();
@@ -57,6 +78,45 @@ public class AzureServiceBusManagementService : IServiceBusManagementService, ID
             await DisconnectAsync();
             return false;
         }
+    }
+
+    private static bool IsConnectionString(string input)
+    {
+        // Connection strings typically contain "Endpoint=" and "SharedAccessKeyName=" or "SharedAccessKey="
+        return input.Contains("Endpoint=", StringComparison.OrdinalIgnoreCase) &&
+               (input.Contains("SharedAccessKeyName=", StringComparison.OrdinalIgnoreCase) ||
+                input.Contains("SharedAccessKey=", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string EnsureFullyQualifiedNamespace(string input)
+    {
+        // Strip port number if present (e.g., "myservicebus.servicebus.windows.net:5671" -> "myservicebus.servicebus.windows.net")
+        var namespaceWithoutPort = input;
+        var portIndex = input.LastIndexOf(':');
+        if (portIndex > 0)
+        {
+            // Ensure it's actually a port number and not part of a URL scheme
+            var afterColon = input.Substring(portIndex + 1);
+            if (int.TryParse(afterColon, out _))
+            {
+                namespaceWithoutPort = input.Substring(0, portIndex);
+            }
+        }
+        
+        // If it's already a full FQDN (e.g., myservicebus.servicebus.windows.net), return as-is
+        if (namespaceWithoutPort.EndsWith(".servicebus.windows.net", StringComparison.OrdinalIgnoreCase))
+        {
+            return namespaceWithoutPort;
+        }
+        
+        // If it's just the namespace name (e.g., myservicebus), append the domain
+        if (!namespaceWithoutPort.Contains('.'))
+        {
+            return $"{namespaceWithoutPort}.servicebus.windows.net";
+        }
+        
+        // Otherwise, return as-is (might be a custom domain or already formatted)
+        return namespaceWithoutPort;
     }
 
     public async Task DisconnectAsync()

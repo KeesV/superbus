@@ -10,6 +10,7 @@ namespace BusOps.ViewModels;
 public class ConnectionItemViewModel : ReactiveObject
 {
     private readonly ServiceBusConnection _connection;
+    private readonly MainWindowViewModel _mainViewModel;
 
     public string Id => _connection.Id;
     public string Name => _connection.Name;
@@ -19,18 +20,17 @@ public class ConnectionItemViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> ConnectCommand { get; }
 
-    public ConnectionItemViewModel(ServiceBusConnection connection)
+    public ConnectionItemViewModel(ServiceBusConnection connection, MainWindowViewModel mainViewModel)
     {
         _connection = connection;
-        ConnectCommand = ReactiveCommand.Create(OnConnect);
+        _mainViewModel = mainViewModel;
+        ConnectCommand = ReactiveCommand.CreateFromTask(OnConnectAsync);
     }
 
-    private void OnConnect()
+    private async Task OnConnectAsync()
     {
-        // TODO: Implement connection logic
-        // This will be implemented later
+        await _mainViewModel.LoadEntitiesAsync(_connection.ConnectionString, _connection.Name);
     }
 
     public ServiceBusConnection GetConnection() => _connection;
 }
-

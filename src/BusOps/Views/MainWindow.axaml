@@ -74,6 +74,13 @@
                 </Grid>
             </Border>
         </DataTemplate>
+
+        <!-- DataTemplate for Entity Tree Items -->
+        <DataTemplate x:Key="EntityTreeItemTemplate" x:DataType="vm:EntityTreeItemViewModel">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding DisplayText}" />
+            </StackPanel>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -127,8 +134,17 @@
                     </ListBox>
     
                     <TextBlock Text="Service Bus Entities" FontWeight="Bold" Margin="0,20,0,10"/>
-                    <TreeView Name="EntitiesTree" Height="300">
-                        <!-- Service Bus entities will be populated here -->
+                    <TreeView Name="EntitiesTree" 
+                              Height="300"
+                              ItemsSource="{Binding Entities}"
+                              ItemTemplate="{StaticResource EntityTreeItemTemplate}">
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:EntityTreeItemViewModel">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding DisplayText}" />
+                                </StackPanel>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
                     </TreeView>
                 </StackPanel>
             </Border>
@@ -168,9 +184,9 @@
                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                 BorderThickness="0,1,0,0" Padding="10,5">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Ready" Name="StatusText"/>
+                <TextBlock Text="{Binding StatusText}" Name="StatusText"/>
                 <TextBlock Text=" | " Margin="10,0"/>
-                <TextBlock Text="No active connections" Name="ConnectionStatus"/>
+                <TextBlock Text="{Binding ConnectionStatus}" Name="ConnectionStatus"/>
             </StackPanel>
         </Border>
     </Grid>
