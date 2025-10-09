@@ -10,4 +10,5 @@ public interface IServiceBusConnectionService
     Task DeleteConnectionAsync(string id);
     Task<bool> TestConnectionAsync(string connectionString);
     Task<IEnumerable<DiscoveredServiceBusNamespace>> DiscoverNamespacesAsync();
+
 }

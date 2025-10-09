@@ -17,7 +17,7 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
 {
     private readonly ILogger<AzureServiceBusConnectionService> _logger;
     private readonly string _storageFilePath;
-    private List<ServiceBusConnection> _connections;
+    private List<ServiceBusConnection>? _connections;
     private readonly SemaphoreSlim _fileLock = new(1, 1);
 
     public AzureServiceBusConnectionService(ILogger<AzureServiceBusConnectionService> logger)
@@ -30,17 +30,19 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
         Directory.CreateDirectory(appFolder);
         
         _storageFilePath = Path.Combine(appFolder, "connections.json");
-        _connections = new List<ServiceBusConnection>();
         
         // Load existing connections
-        LoadConnectionsAsync().GetAwaiter().GetResult();
+        //LoadConnectionsAsync().GetAwaiter().GetResult();
     }
 
     public async Task<IEnumerable<ServiceBusConnection>> GetConnectionsAsync()
     {
+        if (_connections is not null) return _connections;
+        
         await _fileLock.WaitAsync();
         try
         {
+            _connections = await LoadConnectionsAsync();
             return _connections.ToList();
         }
         finally
@@ -51,9 +53,12 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
 
     public async Task<ServiceBusConnection?> GetConnectionAsync(string id)
     {
+        if (_connections is not null) return _connections.FirstOrDefault(x => x.Id == id);
+        
         await _fileLock.WaitAsync();
         try
         {
+            _connections = await LoadConnectionsAsync();
             return _connections.FirstOrDefault(c => c.Id == id);
         }
         finally
@@ -64,6 +69,7 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
 
     public async Task<ServiceBusConnection> SaveConnectionAsync(ServiceBusConnection connection)
     {
+        _connections ??= await LoadConnectionsAsync();
         await _fileLock.WaitAsync();
         try
         {
@@ -101,6 +107,8 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
 
     public async Task DeleteConnectionAsync(string id)
     {
+        _connections ??= await LoadConnectionsAsync();
+        
         await _fileLock.WaitAsync();
         try
         {
@@ -208,7 +216,7 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
                                 ResourceGroup = namespaceResource.Id.ResourceGroupName ?? "Unknown",
                                 Location = data.Location.Name,
                                 Sku = data.Sku?.Name.ToString() ?? "Unknown",
-                                Status = data.Status?.ToString() ?? "Unknown"
+                                Status = data.Status ?? "Unknown"
                             };
 
                             discoveredNamespaces.Add(discoveredNamespace);
@@ -282,7 +290,7 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
         _logger.LogDebug("Connected to namespace using Azure AD: {NamespaceName}", namespaceProperties.Value.Name);
     }
 
-    private bool IsConnectionString(string value)
+    private static bool IsConnectionString(string value)
     {
         // Connection strings typically contain "Endpoint=" and "SharedAccessKeyName=" or "SharedAccessKey="
         return value.Contains("Endpoint=", StringComparison.OrdinalIgnoreCase) &&
@@ -290,12 +298,12 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
                 value.Contains("SharedAccessKey=", StringComparison.OrdinalIgnoreCase));
     }
 
-    private async Task LoadConnectionsAsync()
+    private async Task<List<ServiceBusConnection>> LoadConnectionsAsync()
     {
         if (!File.Exists(_storageFilePath))
         {
             _logger.LogInformation("No existing connections file found. Starting with empty connections list.");
-            return;
+            return new List<ServiceBusConnection>();
         }
         
         await _fileLock.WaitAsync();
@@ -319,6 +327,8 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
         {
             _fileLock.Release();
         }
+        
+        return _connections;
     }
 
     private async Task SaveConnectionsAsync()

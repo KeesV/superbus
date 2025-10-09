@@ -20,7 +20,7 @@ public class AddConnectionDialogViewModel : ReactiveObject
     private string _description = string.Empty;
     private string _customConnectionString = string.Empty;
     private bool _useCustomConnectionString;
-
+    
     public AddConnectionDialogViewModel(IServiceBusConnectionService connectionService, ILogger<AddConnectionDialogViewModel>? logger = null)
     {
         _connectionService = connectionService;

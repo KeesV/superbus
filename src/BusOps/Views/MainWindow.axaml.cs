@@ -29,7 +29,7 @@ public partial class MainWindow : Window
         AvaloniaXamlLoader.Load(this);
     }
 
-    private async System.Threading.Tasks.Task ShowAddConnectionDialog()
+    private async Task ShowAddConnectionDialog()
     {
         // Create the dialog with DI-injected ViewModel
         var dialogViewModel = _serviceProvider.GetRequiredService<AddConnectionDialogViewModel>();
