@@ -4,6 +4,7 @@ namespace BusOps.Core.Interfaces;
 
 public interface IServiceBusMessageService
 {
+    void Initialize(string connectionStringOrNamespace);
     Task SendMessageAsync(string queueOrTopicName, ServiceBusMessage message);
     Task<IEnumerable<ServiceBusMessage>> ReceiveMessagesAsync(string queueName, int maxMessages = 10, bool peekOnly = true);
     Task<IEnumerable<ServiceBusMessage>> ReceiveSubscriptionMessagesAsync(string topicName, string subscriptionName, int maxMessages = 10, bool peekOnly = true);

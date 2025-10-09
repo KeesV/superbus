@@ -57,6 +57,7 @@ public partial class App : Application
         services.AddSingleton<IServiceBusClientFactory, ServiceBusClientFactory>();
         services.AddSingleton<IServiceBusConnectionService, AzureServiceBusConnectionService>();
         services.AddSingleton<IServiceBusManagementService, AzureServiceBusManagementService>();
+        services.AddSingleton<IServiceBusMessageService, AzureServiceBusMessageService>();
 
         // Views and ViewModels
         services.AddSingleton<MainWindow>();

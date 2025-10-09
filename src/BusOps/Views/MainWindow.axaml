@@ -3,9 +3,10 @@
         xmlns:vm="using:BusOps.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
         x:Class="BusOps.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
+        x:CompileBindings="False"
         Title="BusOps - Azure Service Bus Management"
         Width="1200"
         Height="800">
@@ -223,66 +224,82 @@
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" 
-                                       Text="Entity Details" 
+                                       Text="Messages" 
                                        FontWeight="SemiBold" 
                                        FontSize="16"
                                        Margin="0,0,0,10"/>
 
                             <ScrollViewer Grid.Row="1">
                                 <StackPanel>
-                                    <!-- Entity Information -->
-                                    <Grid IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNotNull}}">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="120"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <TextBlock Grid.Row="0" Grid.Column="0" 
-                                                   Text="Name:" 
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,0,0,5"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="1" 
-                                                   Text="{Binding SelectedEntity.Name}"
-                                                   Margin="0,0,0,5"/>
-
-                                        <TextBlock Grid.Row="1" Grid.Column="0" 
-                                                   Text="Type:" 
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,0,0,5"/>
-                                        <TextBlock Grid.Row="1" Grid.Column="1" 
-                                                   Text="{Binding SelectedEntity.Type}"
-                                                   Margin="0,0,0,5"/>
-
-                                        <TextBlock Grid.Row="2" Grid.Column="0" 
-                                                   Text="Message Count:" 
-                                                   FontWeight="SemiBold"
-                                                   Margin="0,0,0,5"/>
-                                        <TextBlock Grid.Row="2" Grid.Column="1" 
-                                                   Text="{Binding SelectedEntity.MessageCount}"
-                                                   Margin="0,0,0,5"/>
-
-                                        <!-- Action Buttons -->
-                                        <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
-                                                    Orientation="Horizontal" 
-                                                    Margin="0,20,0,0">
-                                            <Button Content="Peek Messages" Margin="0,0,5,0"/>
-                                            <Button Content="Send Message" Margin="0,0,5,0"/>
-                                            <Button Content="Delete" Margin="0,0,5,0"/>
-                                        </StackPanel>
-                                    </Grid>
-
-                                    <!-- No Selection Message -->
-                                    <TextBlock IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNull}}"
-                                               Text="Select an entity from the tree to view details"
+                                    <!-- Loading Indicator -->
+                                    <TextBlock IsVisible="{Binding IsLoadingMessages}"
+                                               Text="Loading messages..."
                                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center"
+                                               Margin="0,20"/>
+
+                                    <!-- No Selection Message - show when SelectedEntity is null -->
+                                    <TextBlock Text="Select a queue or subscription from the tree to view messages"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,20"
+                                               IsVisible="{Binding ShowNoSelectionMessage}"/>
+
+                                    <!-- Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription -->
+                                    <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,20"
+                                               IsVisible="{Binding ShowNonMessageableEntityMessage}"/>
+
+                                    <!-- Messages Table -->
+                                    <DataGrid ItemsSource="{Binding Messages, Mode=OneWay}"
+                                              IsReadOnly="True"
+                                              GridLinesVisibility="All"
+                                              BorderThickness="1"
+                                              AutoGenerateColumns="False"
+                                              CanUserResizeColumns="True"
+                                              CanUserSortColumns="True"
+                                              MinHeight="200"
+                                              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+                                        <DataGrid.IsVisible>
+                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                <Binding Path="!IsLoadingMessages"/>
+                                                <Binding Path="HasMessages"/>
+                                            </MultiBinding>
+                                        </DataGrid.IsVisible>
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Sequence #" 
+                                                                Binding="{Binding SequenceNumber}" 
+                                                                Width="Auto"/>
+                                            <DataGridTextColumn Header="Message ID" 
+                                                                Binding="{Binding MessageId}" 
+                                                                Width="200"/>
+                                            <DataGridTextColumn Header="Enqueued Time" 
+                                                                Binding="{Binding EnqueuedTime, StringFormat='{}{0:g}'}" 
+                                                                Width="150"/>
+                                            <DataGridTextColumn Header="Delivery Count" 
+                                                                Binding="{Binding DeliveryCount}" 
+                                                                Width="100"/>
+                                            <DataGridTextColumn Header="Label" 
+                                                                Binding="{Binding Label}" 
+                                                                Width="150"/>
+                                            <DataGridTextColumn Header="Correlation ID" 
+                                                                Binding="{Binding CorrelationId}" 
+                                                                Width="150"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <!-- No Messages Message - only for queues/subscriptions with 0 messages -->
+                                    <TextBlock Text="No messages found in this queue/subscription"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Margin="0,20"
+                                               IsVisible="{Binding ShowNoMessagesForEntity}"/>
                                 </StackPanel>
                             </ScrollViewer>
                         </Grid>
@@ -345,3 +362,4 @@
     </Grid>
 
 </Window>
+

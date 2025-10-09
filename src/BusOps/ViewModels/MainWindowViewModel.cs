@@ -3,6 +3,7 @@ using System.Reactive;
 using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using BusOps.Core.Interfaces;
+using BusOps.Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace BusOps.ViewModels;
@@ -11,6 +12,7 @@ public class MainWindowViewModel : ReactiveObject
 {
     private readonly IServiceBusConnectionService _connectionService;
     private readonly IServiceBusManagementService _managementService;
+    private readonly IServiceBusMessageService _messageService;
     private readonly ILogger<MainWindowViewModel> _logger;
     private string _greeting = "Welcome to BusOps!";
     private string _statusText = "Ready";
@@ -18,6 +20,8 @@ public class MainWindowViewModel : ReactiveObject
     private bool _hasEntities;
     private EntityTreeItemViewModel? _selectedEntity;
     private int _maxMessagesToShow = 100;
+    private bool _isLoadingMessages;
+    private string _currentConnectionString = string.Empty;
 
     public string Greeting
     {
@@ -55,6 +59,23 @@ public class MainWindowViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _maxMessagesToShow, value);
     }
 
+    public bool IsLoadingMessages
+    {
+        get => _isLoadingMessages;
+        set => this.RaiseAndSetIfChanged(ref _isLoadingMessages, value);
+    }
+
+    public bool HasMessages => Messages.Count > 0;
+    
+    public bool ShowNoSelectionMessage => !IsLoadingMessages && SelectedEntity == null;
+    
+    public bool ShowNoMessagesForEntity => !IsLoadingMessages && SelectedEntity != null 
+        && (SelectedEntity.Type == "Queue" || SelectedEntity.Type == "Subscription") 
+        && !HasMessages;
+    
+    public bool ShowNonMessageableEntityMessage => !IsLoadingMessages && SelectedEntity != null 
+        && SelectedEntity.Type != "Queue" && SelectedEntity.Type != "Subscription";
+
     public ObservableCollection<int> MessageLimitOptions { get; } = new()
     {
         10, 25, 50, 100, 250, 500, 1000
@@ -62,6 +83,7 @@ public class MainWindowViewModel : ReactiveObject
 
     public ObservableCollection<ConnectionItemViewModel> Connections { get; } = new();
     public ObservableCollection<EntityTreeItemViewModel> Entities { get; } = new();
+    public ObservableCollection<ServiceBusMessage> Messages { get; } = new();
 
     public ReactiveCommand<Unit, Unit> AddConnectionCommand { get; }
     
@@ -72,16 +94,44 @@ public class MainWindowViewModel : ReactiveObject
     public MainWindowViewModel(
         IServiceBusConnectionService connectionService,
         IServiceBusManagementService managementService,
+        IServiceBusMessageService messageService,
         ILogger<MainWindowViewModel> logger)
     {
         _connectionService = connectionService;
         _managementService = managementService;
+        _messageService = messageService;
         _logger = logger;
         
         AddConnectionCommand = ReactiveCommand.CreateFromTask(OnAddConnectionAsync);
         
         // Load connections on initialization
         _ = LoadConnectionsAsync();
+        
+        // Notify when Messages collection changes
+        Messages.CollectionChanged += (_, _) =>
+        {
+            this.RaisePropertyChanged(nameof(HasMessages));
+            this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
+        };
+        
+        // Watch for changes to SelectedEntity and MaxMessagesToShow
+        this.WhenAnyValue(x => x.SelectedEntity, x => x.MaxMessagesToShow)
+            .Subscribe(tuple =>
+            {
+                this.RaisePropertyChanged(nameof(ShowNoSelectionMessage));
+                this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
+                this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
+                _ = LoadMessagesForSelectedEntityAsync();
+            });
+            
+        // Watch for loading state changes
+        this.WhenAnyValue(x => x.IsLoadingMessages)
+            .Subscribe(_ =>
+            {
+                this.RaisePropertyChanged(nameof(ShowNoSelectionMessage));
+                this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
+                this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
+            });
     }
 
     private async Task LoadConnectionsAsync()
@@ -125,7 +175,13 @@ public class MainWindowViewModel : ReactiveObject
             
             _logger.LogInformation("Connecting to Service Bus: {ConnectionName}", connectionName);
             
+            // Store the connection string for message operations
+            _currentConnectionString = connectionString;
+            
             await _managementService.ConnectAsync(connectionString);
+            
+            // Initialize the message service with the same connection
+            _messageService.Initialize(connectionString);
         } catch (Exception ex)
         {
             StatusText = "Connection failed";
@@ -224,5 +280,102 @@ public class MainWindowViewModel : ReactiveObject
                 await ShowErrorDialog("Failed to Load Entities", ex);
             }
         }
+    }
+
+    private async Task LoadMessagesForSelectedEntityAsync()
+    {
+        if (SelectedEntity == null || string.IsNullOrEmpty(_currentConnectionString))
+        {
+            Messages.Clear();
+            return;
+        }
+
+        // Only load messages for Queue or Subscription entities, not folders or topics
+        if (SelectedEntity.Type != "Queue" && SelectedEntity.Type != "Subscription")
+        {
+            Messages.Clear();
+            return;
+        }
+
+        try
+        {
+            IsLoadingMessages = true;
+            StatusText = $"Loading messages from {SelectedEntity.Name}...";
+            Messages.Clear();
+
+            IEnumerable<ServiceBusMessage> messages;
+
+            if (SelectedEntity.Type == "Queue")
+            {
+                _logger.LogInformation("Peeking {MaxMessages} messages from queue {QueueName}", 
+                    MaxMessagesToShow, SelectedEntity.Name);
+                messages = await _messageService.ReceiveMessagesAsync(
+                    SelectedEntity.Name, 
+                    MaxMessagesToShow, 
+                    peekOnly: true);
+            }
+            else // Subscription
+            {
+                // Find the parent topic name
+                var topicName = FindParentTopicName(SelectedEntity);
+                if (string.IsNullOrEmpty(topicName))
+                {
+                    _logger.LogWarning("Could not find parent topic for subscription {SubscriptionName}", 
+                        SelectedEntity.Name);
+                    StatusText = "Error: Could not find parent topic";
+                    return;
+                }
+
+                _logger.LogInformation("Peeking {MaxMessages} messages from subscription {TopicName}/{SubscriptionName}", 
+                    MaxMessagesToShow, topicName, SelectedEntity.Name);
+                messages = await _messageService.ReceiveSubscriptionMessagesAsync(
+                    topicName, 
+                    SelectedEntity.Name, 
+                    MaxMessagesToShow, 
+                    peekOnly: true);
+            }
+
+            foreach (var message in messages)
+            {
+                Messages.Add(message);
+            }
+
+            StatusText = $"Loaded {Messages.Count} messages";
+            _logger.LogInformation("Successfully loaded {Count} messages", Messages.Count);
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Error loading messages";
+            _logger.LogError(ex, "Failed to load messages for {EntityType} {EntityName}", 
+                SelectedEntity.Type, SelectedEntity.Name);
+            
+            if (ShowErrorDialog != null)
+            {
+                await ShowErrorDialog("Failed to Load Messages", ex);
+            }
+        }
+        finally
+        {
+            IsLoadingMessages = false;
+        }
+    }
+
+    private string? FindParentTopicName(EntityTreeItemViewModel subscriptionEntity)
+    {
+        // Find the Topics folder in the Entities tree
+        var topicsFolder = Entities.FirstOrDefault(e => e.Type == "Folder" && e.Name == "Topics");
+        if (topicsFolder == null)
+            return null;
+
+        // Search through all topics to find the one containing this subscription
+        foreach (var topic in topicsFolder.Children)
+        {
+            if (topic.Children.Any(sub => sub.Name == subscriptionEntity.Name))
+            {
+                return topic.Name;
+            }
+        }
+
+        return null;
     }
 }
