@@ -13,7 +13,7 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:DesignMainWindowViewModel/>
     </Design.DataContext>
 
     <Window.Resources>
@@ -134,8 +134,8 @@
                             HorizontalAlignment="Stretch"
                             Margin="0,0,0,10"
                             Command="{Binding AddConnectionCommand}"/>
-                    <ListBox Grid.Row="2" Name="ConnectionsList" 
-                             Height="200"
+                    <ListBox Grid.Row="2" Name="ConnectionsList"
+                             MaxHeight="200"
                              ItemsSource="{Binding Connections}"
                              ItemTemplate="{StaticResource ConnectionItemTemplate}"
                              Background="Transparent">
