@@ -22,6 +22,7 @@ public partial class MainWindow : Window
         
         // Set the dialog opening delegate
         viewModel.ShowAddConnectionDialog = ShowAddConnectionDialog;
+        viewModel.ShowErrorDialog = ShowErrorDialog;
     }
 
     private void InitializeComponent()
@@ -42,5 +43,11 @@ public partial class MainWindow : Window
             // TODO: Refresh the connections list
         }
     }
-}
 
+    private async Task ShowErrorDialog(string title, Exception exception)
+    {
+        var dialogViewModel = ErrorDialogViewModel.FromException(title, exception);
+        var dialog = new ErrorDialog(dialogViewModel);
+        await dialog.ShowDialog(this);
+    }
+}

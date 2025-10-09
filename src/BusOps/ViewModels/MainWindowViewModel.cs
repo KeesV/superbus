@@ -41,6 +41,7 @@ public class MainWindowViewModel : ReactiveObject
     
     // This will be set by the view
     public Func<Task>? ShowAddConnectionDialog { get; set; }
+    public Func<string, Exception, Task>? ShowErrorDialog { get; set; }
 
     public MainWindowViewModel(
         IServiceBusConnectionService connectionService,
@@ -98,16 +99,23 @@ public class MainWindowViewModel : ReactiveObject
             
             _logger.LogInformation("Connecting to Service Bus: {ConnectionName}", connectionName);
             
-            var connected = await _managementService.ConnectAsync(connectionString);
+            await _managementService.ConnectAsync(connectionString);
+        } catch (Exception ex)
+        {
+            StatusText = "Connection failed";
+            ConnectionStatus = "Connection failed";
+            _logger.LogError(ex, "Exception while connecting to Service Bus");
             
-            if (!connected)
+            // Show error dialog with exception details
+            if (ShowErrorDialog != null)
             {
-                StatusText = "Connection failed";
-                ConnectionStatus = "Connection failed";
-                _logger.LogError("Failed to connect to Service Bus");
-                return;
+                await ShowErrorDialog("Connection Error", ex);
             }
-
+            return;
+        }
+        
+        try
+        {
             StatusText = "Loading entities...";
             ConnectionStatus = $"Connected to {connectionName}";
             
@@ -179,6 +187,12 @@ public class MainWindowViewModel : ReactiveObject
             StatusText = "Error loading entities";
             ConnectionStatus = "Error";
             _logger.LogError(ex, "Failed to load Service Bus entities");
+            
+            // Show error dialog with exception details
+            if (ShowErrorDialog != null)
+            {
+                await ShowErrorDialog("Failed to Load Entities", ex);
+            }
         }
     }
 }

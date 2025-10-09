@@ -4,7 +4,7 @@ namespace BusOps.Core.Interfaces;
 
 public interface IServiceBusManagementService
 {
-    Task<bool> ConnectAsync(string connectionString);
+    Task ConnectAsync(string connectionString);
     Task DisconnectAsync();
     Task<IEnumerable<ServiceBusQueue>> GetQueuesAsync();
     Task<IEnumerable<ServiceBusTopic>> GetTopicsAsync();

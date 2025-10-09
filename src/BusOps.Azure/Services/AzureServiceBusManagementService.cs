@@ -36,7 +36,7 @@ public class AzureServiceBusManagementService : IServiceBusManagementService, ID
             .Build();
     }
 
-    public async Task<bool> ConnectAsync(string connectionString)
+    public async Task ConnectAsync(string connectionString)
     {
         try
         {
@@ -69,14 +69,12 @@ public class AzureServiceBusManagementService : IServiceBusManagementService, ID
             
             _logger.LogInformation("Successfully connected to Azure Service Bus namespace: {NamespaceName}", 
                 namespaceProperties.Value.Name);
-            
-            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to connect to Azure Service Bus");
             await DisconnectAsync();
-            return false;
+            throw;
         }
     }
 
