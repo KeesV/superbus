@@ -16,6 +16,66 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
+    <Window.Resources>
+        <!-- DataTemplate for Connection List Items -->
+        <DataTemplate x:Key="ConnectionItemTemplate" x:DataType="vm:ConnectionItemViewModel">
+            <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="10"
+                    Margin="0,0,0,5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Connection Name -->
+                    <TextBlock Grid.Row="0" Grid.Column="0"
+                               Text="{Binding Name}"
+                               FontWeight="SemiBold"
+                               FontSize="14"/>
+                    
+                    <!-- Connect Button -->
+                    <Button Grid.Row="0" Grid.Column="1" Grid.RowSpan="3"
+                            Content="Connect"
+                            VerticalAlignment="Center"
+                            Margin="5,0,0,0"
+                            Command="{Binding ConnectCommand}"/>
+                    
+                    <!-- Description -->
+                    <TextBlock Grid.Row="1" Grid.Column="0"
+                               Text="{Binding Description}"
+                               FontSize="12"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               TextWrapping="Wrap"
+                               Margin="0,2,0,0"
+                               IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                    
+                    <!-- Last Connected -->
+                    <TextBlock Grid.Row="2" Grid.Column="0"
+                               FontSize="11"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               Margin="0,2,0,0">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Last connected: {0:g}">
+                                <Binding Path="LastConnected"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                        <TextBlock.IsVisible>
+                            <Binding Path="LastConnected" Converter="{x:Static ObjectConverters.IsNotNull}"/>
+                        </TextBlock.IsVisible>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -58,7 +118,11 @@
                             HorizontalAlignment="Stretch"
                             Margin="0,0,0,10"
                             Command="{Binding AddConnectionCommand}"/>
-                    <ListBox Name="ConnectionsList" Height="200">
+                    <ListBox Name="ConnectionsList" 
+                             Height="200"
+                             ItemsSource="{Binding Connections}"
+                             ItemTemplate="{StaticResource ConnectionItemTemplate}"
+                             Background="Transparent">
                         <!-- Connection items will be populated here -->
                     </ListBox>
     

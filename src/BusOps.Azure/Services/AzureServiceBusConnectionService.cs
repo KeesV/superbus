@@ -39,15 +39,15 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
     {
         if (_connections is not null) return _connections;
         
-        await _fileLock.WaitAsync();
         try
         {
             _connections = await LoadConnectionsAsync();
             return _connections.ToList();
         }
-        finally
+        catch (Exception ex)
         {
-            _fileLock.Release();
+            _logger.LogError(ex, "Failed to get connections: {ErrorMessage}", ex.Message);
+            return [];
         }
     }
 
@@ -55,22 +55,22 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
     {
         if (_connections is not null) return _connections.FirstOrDefault(x => x.Id == id);
         
-        await _fileLock.WaitAsync();
         try
         {
             _connections = await LoadConnectionsAsync();
             return _connections.FirstOrDefault(c => c.Id == id);
         }
-        finally
+        catch (Exception ex)
         {
-            _fileLock.Release();
+            _logger.LogError(ex, "Failed to get connection with ID {ConnectionId}: {ErrorMessage}", id, ex.Message);
+            return null;
         }
     }
 
     public async Task<ServiceBusConnection> SaveConnectionAsync(ServiceBusConnection connection)
     {
         _connections ??= await LoadConnectionsAsync();
-        await _fileLock.WaitAsync();
+
         try
         {
             var existingIndex = _connections.FindIndex(c => c.Id == connection.Id);
@@ -99,9 +99,11 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
             await SaveConnectionsAsync();
             return connection;
         }
-        finally
+        catch (Exception ex)
         {
-            _fileLock.Release();
+            _logger.LogError(ex, "Failed to save connection {ConnectionName}: {ErrorMessage}", 
+                connection.Name, ex.Message);
+            throw;
         }
     }
 
@@ -109,7 +111,6 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
     {
         _connections ??= await LoadConnectionsAsync();
         
-        await _fileLock.WaitAsync();
         try
         {
             var connection = _connections.FirstOrDefault(c => c.Id == id);
@@ -125,9 +126,10 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
                 _logger.LogWarning("Attempted to delete non-existent connection with ID: {ConnectionId}", id);
             }
         }
-        finally
+        catch (Exception ex)
         {
-            _fileLock.Release();
+            _logger.LogError(ex, "Failed to delete connection with ID {ConnectionId}: {ErrorMessage}", id, ex.Message);
+            throw;
         }
     }
 
@@ -306,9 +308,9 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
             return new List<ServiceBusConnection>();
         }
         
-        await _fileLock.WaitAsync();
         try
         {
+            await _fileLock.WaitAsync();
             var json = await File.ReadAllTextAsync(_storageFilePath);
             var connections = JsonSerializer.Deserialize<List<ServiceBusConnection>>(json);
             
@@ -341,6 +343,7 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
             };
             
             var json = JsonSerializer.Serialize(_connections, options);
+            await _fileLock.WaitAsync();
             await File.WriteAllTextAsync(_storageFilePath, json);
             
             _logger.LogDebug("Saved {Count} connections to storage", _connections.Count);
@@ -349,6 +352,10 @@ public class AzureServiceBusConnectionService : IServiceBusConnectionService
         {
             _logger.LogError(ex, "Failed to save connections to file: {FilePath}", _storageFilePath);
             throw;
+        }
+        finally
+        {
+            _fileLock.Release();
         }
     }
 }

@@ -46,6 +46,8 @@ public partial class App : Application
 
         // Logging
         Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .WriteTo.Console()
             .WriteTo.File("logs/busops-.txt", rollingInterval: RollingInterval.Day)
             .CreateLogger();
         
