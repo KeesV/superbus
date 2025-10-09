@@ -17,6 +17,7 @@ public class MainWindowViewModel : ReactiveObject
     private string _connectionStatus = "No active connections";
     private bool _hasEntities;
     private EntityTreeItemViewModel? _selectedEntity;
+    private int _maxMessagesToShow = 100;
 
     public string Greeting
     {
@@ -47,6 +48,17 @@ public class MainWindowViewModel : ReactiveObject
         get => _selectedEntity;
         set => this.RaiseAndSetIfChanged(ref _selectedEntity, value);
     }
+
+    public int MaxMessagesToShow
+    {
+        get => _maxMessagesToShow;
+        set => this.RaiseAndSetIfChanged(ref _maxMessagesToShow, value);
+    }
+
+    public ObservableCollection<int> MessageLimitOptions { get; } = new()
+    {
+        10, 25, 50, 100, 250, 500, 1000
+    };
 
     public ObservableCollection<ConnectionItemViewModel> Connections { get; } = new();
     public ObservableCollection<EntityTreeItemViewModel> Entities { get; } = new();
