@@ -54,6 +54,7 @@ public partial class App : Application
         services.AddLogging(builder => builder.AddSerilog());
 
         // Core Services
+        services.AddSingleton<IServiceBusClientFactory, ServiceBusClientFactory>();
         services.AddSingleton<IServiceBusConnectionService, AzureServiceBusConnectionService>();
         services.AddSingleton<IServiceBusManagementService, AzureServiceBusManagementService>();
 
