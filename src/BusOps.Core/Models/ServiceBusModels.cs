@@ -67,8 +67,36 @@ public class ServiceBusSubscription
     public DateTimeOffset? UpdatedAt { get; set; }
 }
 
+public class ServiceBusMessageProperty
+{
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
+}
+
 public class ServiceBusMessage : INotifyPropertyChanged
 {
+    public List<ServiceBusMessageProperty> BrokerProperties =>
+    [
+        new() { Key = "MessageId", Value = MessageId },
+        new() { Key = "CorrelationId", Value = CorrelationId ?? string.Empty },
+        new() { Key = "SessionId", Value = SessionId ?? string.Empty },
+        new() { Key = "Label", Value = Label ?? string.Empty },
+        new() { Key = "To", Value = To ?? string.Empty },
+        new() { Key = "ReplyTo", Value = ReplyTo ?? string.Empty },
+        new() { Key = "TimeToLive", Value = TimeToLive?.ToString() ?? string.Empty },
+        new() { Key = "ScheduledEnqueueTime", Value = ScheduledEnqueueTime?.ToString() ?? string.Empty },
+        new() { Key = "EnqueuedTime", Value = EnqueuedTime.ToString() },
+        new() { Key = "DeliveryCount", Value = DeliveryCount.ToString() },
+        new() { Key = "SequenceNumber", Value = SequenceNumber.ToString() }
+    ];
+    
+    public List<ServiceBusMessageProperty> CustomProperties =>
+        Properties.Select(kv => new ServiceBusMessageProperty
+        {
+            Key = kv.Key,
+            Value = kv.Value?.ToString() ?? string.Empty
+        }).ToList();
+    
     private bool _isSelected;
 
     public string MessageId { get; set; } = string.Empty;

@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:design="clr-namespace:BusOps.Design"
         xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
+        xmlns:controls="clr-namespace:BusOps.Controls"
         mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="1000"
         x:Class="BusOps.Views.MainWindow"
         x:CompileBindings="False"
@@ -335,109 +336,7 @@
                             Padding="10"
                             Margin="5"
                             Background="{DynamicResource PrimaryBackgroundPanelBrush}">
-                        <ScrollViewer>
-                            <Grid RowDefinitions="Auto,Auto">
-                                <!-- Row 0: Message Properties and Custom Properties side-by-side -->
-                                <Grid Grid.Row="0" ColumnDefinitions="*,*" Margin="0,0,0,10">
-                                    <!-- Left Column: Message Properties -->
-                                    <StackPanel Grid.Column="0" Spacing="5" Margin="0,0,10,0">
-                                        <TextBlock Text="Message Properties"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="14"
-                                                   Margin="0,0,0,5"/>
-
-                                        <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-                                            <!-- Message ID -->
-                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Message ID:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding SelectedMessage.MessageId}" Margin="0,2" TextWrapping="Wrap"/>
-
-                                            <!-- Sequence Number -->
-                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Sequence Number:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SelectedMessage.SequenceNumber}" Margin="0,2"/>
-
-                                            <!-- Enqueued Time -->
-                                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Enqueued Time:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SelectedMessage.EnqueuedTime, StringFormat='{}{0:F}'}" Margin="0,2"/>
-
-                                            <!-- Delivery Count -->
-                                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Delivery Count:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding SelectedMessage.DeliveryCount}" Margin="0,2"/>
-
-                                            <!-- Label -->
-                                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Label:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding SelectedMessage.Label}" Margin="0,2" TextWrapping="Wrap"/>
-
-                                            <!-- Correlation ID -->
-                                            <TextBlock Grid.Row="5" Grid.Column="0" Text="Correlation ID:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding SelectedMessage.CorrelationId}" Margin="0,2" TextWrapping="Wrap"/>
-
-                                            <!-- Session ID -->
-                                            <TextBlock Grid.Row="6" Grid.Column="0" Text="Session ID:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding SelectedMessage.SessionId}" Margin="0,2" TextWrapping="Wrap"/>
-
-                                            <!-- To -->
-                                            <TextBlock Grid.Row="7" Grid.Column="0" Text="To:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="7" Grid.Column="1" Text="{Binding SelectedMessage.To}" Margin="0,2" TextWrapping="Wrap"/>
-
-                                            <!-- Reply To -->
-                                            <TextBlock Grid.Row="8" Grid.Column="0" Text="Reply To:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="8" Grid.Column="1" Text="{Binding SelectedMessage.ReplyTo}" Margin="0,2" TextWrapping="Wrap"/>
-
-                                            <!-- Time To Live -->
-                                            <TextBlock Grid.Row="9" Grid.Column="0" Text="Time To Live:" FontWeight="SemiBold" Margin="0,2"/>
-                                            <TextBlock Grid.Row="9" Grid.Column="1" Text="{Binding SelectedMessage.TimeToLive}" Margin="0,2"/>
-                                        </Grid>
-                                    </StackPanel>
-
-                                    <!-- Right Column: Custom Properties -->
-                                    <StackPanel Grid.Column="1" Spacing="5" Margin="10,0,0,0">
-                                        <TextBlock Text="Custom Properties"
-                                                   FontWeight="SemiBold"
-                                                   FontSize="14"
-                                                   Margin="0,0,0,5"/>
-
-                                        <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="4"
-                                                Padding="10"
-                                                Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-                                            <ItemsControl ItemsSource="{Binding SelectedMessage.Properties}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Grid ColumnDefinitions="Auto,*" Margin="0,2">
-                                                            <TextBlock Grid.Column="0" Text="{Binding Key}" FontWeight="SemiBold" Margin="0,0,10,0"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap"/>
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </Border>
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Row 1: Message Body -->
-                                <StackPanel Grid.Row="1" Spacing="5">
-                                    <TextBlock Text="Message Body"
-                                               FontWeight="SemiBold"
-                                               FontSize="14"
-                                               Margin="0,10,0,5"/>
-                                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="4"
-                                            Padding="10"
-                                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-                                        <TextBox Text="{Binding SelectedMessage.Body}"
-                                                 IsReadOnly="True"
-                                                 TextWrapping="Wrap"
-                                                 AcceptsReturn="True"
-                                                 MinHeight="100"
-                                                 MaxHeight="300"
-                                                 BorderThickness="0"
-                                                 Background="Transparent"/>
-                                    </Border>
-                                </StackPanel>
-                            </Grid>
-                        </ScrollViewer>
+                        <controls:ServiceBusMessageDetails DataContext="{Binding SelectedMessage }" />
                     </Border>
                 </Grid>
             </Grid>
