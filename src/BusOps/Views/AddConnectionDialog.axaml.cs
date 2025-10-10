@@ -7,8 +7,13 @@ namespace BusOps.Views;
 
 public partial class AddConnectionDialog : Window
 {
-    private readonly AddConnectionDialogViewModel _viewModel;
+    private readonly AddConnectionDialogViewModel? _viewModel;
 
+    public AddConnectionDialog()
+    {
+        InitializeComponent();
+    }
+    
     public AddConnectionDialog(AddConnectionDialogViewModel viewModel)
     {
         _viewModel = viewModel;

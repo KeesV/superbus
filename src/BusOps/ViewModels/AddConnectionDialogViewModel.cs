@@ -21,7 +21,7 @@ public class AddConnectionDialogViewModel : ReactiveObject
     private string _customConnectionString = string.Empty;
     private bool _useCustomConnectionString;
     
-    public AddConnectionDialogViewModel(IServiceBusConnectionService connectionService, ILogger<AddConnectionDialogViewModel>? logger = null)
+    public AddConnectionDialogViewModel(IServiceBusConnectionService connectionService, ILogger<AddConnectionDialogViewModel>? logger = null, bool startDiscovery = true)
     {
         _connectionService = connectionService;
         _logger = logger;
@@ -40,9 +40,12 @@ public class AddConnectionDialogViewModel : ReactiveObject
         
         AddCommand = ReactiveCommand.Create(() => { }, canAdd);
         CancelCommand = ReactiveCommand.Create(() => { });
-        
-        // Start discovery automatically
-        DiscoverNamespacesCommand.Execute().Subscribe();
+
+        if (startDiscovery)
+        {
+            // Start discovery automatically
+            DiscoverNamespacesCommand.Execute().Subscribe();
+        }
     }
 
     public ObservableCollection<DiscoveredServiceBusNamespace> DiscoveredNamespaces

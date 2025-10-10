@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
 namespace BusOps.Core.Models;
 
 public class ServiceBusConnection
@@ -64,8 +67,10 @@ public class ServiceBusSubscription
     public DateTimeOffset? UpdatedAt { get; set; }
 }
 
-public class ServiceBusMessage
+public class ServiceBusMessage : INotifyPropertyChanged
 {
+    private bool _isSelected;
+
     public string MessageId { get; set; } = string.Empty;
     public string? CorrelationId { get; set; }
     public string? SessionId { get; set; }
@@ -79,4 +84,24 @@ public class ServiceBusMessage
     public DateTimeOffset EnqueuedTime { get; set; }
     public int DeliveryCount { get; set; }
     public long SequenceNumber { get; set; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 }

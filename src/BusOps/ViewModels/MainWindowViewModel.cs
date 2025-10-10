@@ -3,55 +3,9 @@ using System.Reactive;
 using System.Collections.ObjectModel;
 using BusOps.Core.Interfaces;
 using BusOps.Core.Models;
-using DynamicData;
 using Microsoft.Extensions.Logging;
 
 namespace BusOps.ViewModels;
-
-public class DesignMainWindowViewModel : MainWindowViewModel
-{
-    public DesignMainWindowViewModel() : base(null!, null!, null!, null!)
-    {
-        Connections.AddRange([
-            new ConnectionItemViewModel(new ServiceBusConnection
-            {
-                CreatedAt = DateTimeOffset.Now,
-                Description = "sb-013-hub-nonprod",
-                Id = "sb-013-hub-nonprod",
-                IsActive = true,
-                LastConnected = DateTimeOffset.Now.AddHours(-1),
-            }, this)
-        ]);
-        Entities.AddRange([
-            new EntityTreeItemViewModel
-            {
-                Name = "Queues",
-                Type = "Folder",
-                MessageCount = 79,
-            }
-        ]);
-        Entities[0].Children.AddRange([
-            new EntityTreeItemViewModel
-            {
-                Name = "my-queue-1",
-                Type = "Queue",
-                MessageCount = 42,
-            },
-            new EntityTreeItemViewModel
-            {
-                Name = "my-queue-2",
-                Type = "Queue",
-                MessageCount = 0,
-            },
-            new EntityTreeItemViewModel
-            {
-                Name = "my-queue-3",
-                Type = "Queue",
-                MessageCount = 37,
-            }
-        ]);
-    }
-}
 
 public class MainWindowViewModel : ReactiveObject
 {
@@ -62,12 +16,13 @@ public class MainWindowViewModel : ReactiveObject
     private string _greeting = "Welcome to BusOps!";
     private string _statusText = "Ready";
     private string _connectionStatus = "No active connections";
-    private bool _hasEntities;
+    private bool _isLoadingEntities;
     private EntityTreeItemViewModel? _selectedEntity;
     private int _maxMessagesToShow = 100;
     private bool _isLoadingMessages;
     private string _currentConnectionString = string.Empty;
     private ServiceBusMessage? _selectedMessage;
+    private bool? _selectAll = false;
 
     public string Greeting
     {
@@ -87,11 +42,13 @@ public class MainWindowViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _connectionStatus, value);
     }
 
-    public bool HasEntities
+    public bool IsLoadingEntities
     {
-        get => _hasEntities;
-        set => this.RaiseAndSetIfChanged(ref _hasEntities, value);
+        get => _isLoadingEntities;
+        set => this.RaiseAndSetIfChanged(ref _isLoadingEntities, value);
     }
+    
+    public bool HasEntities => Entities.Count > 0;
 
     public EntityTreeItemViewModel? SelectedEntity
     {
@@ -115,6 +72,19 @@ public class MainWindowViewModel : ReactiveObject
     {
         get => _selectedMessage;
         set => this.RaiseAndSetIfChanged(ref _selectedMessage, value);
+    }
+
+    public bool? SelectAll
+    {
+        get => _selectAll;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _selectAll, value);
+            if (value.HasValue)
+            {
+                ToggleSelectAllMessages(value.Value);
+            }
+        }
     }
 
     public bool HasMessages => Messages.Count > 0;
@@ -184,6 +154,11 @@ public class MainWindowViewModel : ReactiveObject
                 this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
                 this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
             });
+
+        Entities.CollectionChanged += (_, _) =>
+        {
+            this.RaisePropertyChanged(nameof(HasEntities));
+        };
     }
 
     private async Task LoadConnectionsAsync()
@@ -224,6 +199,7 @@ public class MainWindowViewModel : ReactiveObject
         {
             StatusText = "Connecting...";
             ConnectionStatus = $"Connecting to {connectionName}...";
+            IsLoadingEntities = true;
             
             _logger.LogInformation("Connecting to Service Bus: {ConnectionName}", connectionName);
             
@@ -239,6 +215,7 @@ public class MainWindowViewModel : ReactiveObject
             StatusText = "Connection failed";
             ConnectionStatus = "Connection failed";
             _logger.LogError(ex, "Exception while connecting to Service Bus");
+            IsLoadingEntities = false;
             
             // Show error dialog with exception details
             if (ShowErrorDialog != null)
@@ -247,12 +224,12 @@ public class MainWindowViewModel : ReactiveObject
             }
             return;
         }
-        
+
         try
         {
             StatusText = "Loading entities...";
             ConnectionStatus = $"Connected to {connectionName}";
-            
+
             Entities.Clear();
 
             // Load queues
@@ -314,10 +291,8 @@ public class MainWindowViewModel : ReactiveObject
 
             Entities.Add(topicsNode);
 
-            HasEntities = Entities.Count > 0;
-
             StatusText = "Ready";
-            _logger.LogInformation("Successfully loaded {QueueCount} queues and {TopicCount} topics", 
+            _logger.LogInformation("Successfully loaded {QueueCount} queues and {TopicCount} topics",
                 queues.Count, topics.Count);
         }
         catch (Exception ex)
@@ -325,12 +300,16 @@ public class MainWindowViewModel : ReactiveObject
             StatusText = "Error loading entities";
             ConnectionStatus = "Error";
             _logger.LogError(ex, "Failed to load Service Bus entities");
-            
+
             // Show error dialog with exception details
             if (ShowErrorDialog != null)
             {
                 await ShowErrorDialog("Failed to Load Entities", ex);
             }
+        }
+        finally
+        {
+            IsLoadingEntities = false;
         }
     }
 
@@ -446,5 +425,37 @@ public class MainWindowViewModel : ReactiveObject
         }
 
         return null;
+    }
+
+    private void ToggleSelectAllMessages(bool selectAll)
+    {
+        _logger.LogInformation("ToggleSelectAllMessages called with selectAll={SelectAll}", selectAll);
+
+        if (selectAll)
+        {
+            // Clear existing selections if any
+            foreach (var message in Messages)
+            {
+                message.IsSelected = false;
+            }
+
+            // Select all messages
+            foreach (var message in Messages)
+            {
+                message.IsSelected = true;
+            }
+
+            _logger.LogInformation("All messages selected. Messages.Count={Count}", Messages.Count);
+        }
+        else
+        {
+            // Deselect all messages
+            foreach (var message in Messages)
+            {
+                message.IsSelected = false;
+            }
+
+            _logger.LogInformation("All messages deselected.");
+        }
     }
 }

@@ -3,17 +3,23 @@
         xmlns:vm="using:BusOps.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="550"
+        xmlns:design="clr-namespace:BusOps.Design"
+        xmlns:li="using:LoadingIndicators.Avalonia"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="650"
         x:Class="BusOps.Views.AddConnectionDialog"
         x:DataType="vm:AddConnectionDialogViewModel"
         Title="Add Azure Service Bus Connection"
         Width="600"
-        Height="550"
+        Height="650"
         WindowStartupLocation="CenterOwner"
         CanResize="False">
 
+    <Window.Background>
+        <DynamicResource ResourceKey="PrimaryBackgroundBrush"/>
+    </Window.Background>
+    
     <Design.DataContext>
-        <vm:AddConnectionDialogViewModel/>
+        <design:DesignAddConnectionDialogViewModel/>
     </Design.DataContext>
 
     <Grid Margin="20">
@@ -48,13 +54,12 @@
 
                     <!-- Loading Indicator -->
                     <Border IsVisible="{Binding IsDiscovering}" 
-                            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+                            Background="{DynamicResource PrimaryBackgroundPanelBrush}"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                             BorderThickness="1"
-                            Padding="15"
-                            CornerRadius="4">
+                            CornerRadius="{DynamicResource PanelCornerRadius}">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <TextBlock Text="🔄" FontSize="16"/>
+                            <li:LoadingIndicator IsActive="{Binding IsDiscovering}" Mode="Arcs" SpeedRatio="1" />
                             <TextBlock Text="Discovering Azure Service Bus namespaces..." 
                                        VerticalAlignment="Center"/>
                         </StackPanel>
@@ -66,7 +71,7 @@
                             BorderBrush="#FFA500"
                             BorderThickness="1"
                             Padding="10"
-                            CornerRadius="4">
+                            CornerRadius="{DynamicResource PanelCornerRadius}">
                         <TextBlock Text="{Binding ErrorMessage}" 
                                    Foreground="#CC7700"
                                    TextWrapping="Wrap"/>
@@ -75,12 +80,13 @@
                     <!-- Namespace List -->
                     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" 
                             BorderThickness="1" 
-                            CornerRadius="4"
+                            CornerRadius="{DynamicResource PanelCornerRadius}"
                             MinHeight="120"
                             MaxHeight="200">
                         <ListBox ItemsSource="{Binding DiscoveredNamespaces}"
                                  SelectedItem="{Binding SelectedNamespace}"
-                                 IsEnabled="{Binding !UseCustomConnectionString}">
+                                 IsEnabled="{Binding !UseCustomConnectionString}"
+                                 Background="{DynamicResource PrimaryBackgroundPanelBrush}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Margin="5" Spacing="4">
