@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using AvaloniaEdit.TextMate;
 using BusOps.Core.Models;
+using TextMateSharp.Grammars;
 
 namespace BusOps.Controls;
 
