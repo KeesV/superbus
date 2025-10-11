@@ -114,7 +114,7 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="0,0,0,0"
                     Margin="0">
-                <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,Auto,*">
+                <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
                     <TextBlock Grid.Row="0" Text="Connections" FontWeight="Bold" Margin="0,0,0,10"/>
                     <Button Grid.Row="1" Content="+ Add Connection"
                             HorizontalAlignment="Stretch"
@@ -129,7 +129,21 @@
     
                     <TextBlock Grid.Row="3" Text="Service Bus Entities" FontWeight="Bold" Margin="0,20,0,10"/>
                     
-                    <StackPanel Grid.Row="4" IsVisible="{Binding IsLoadingEntities}">
+                    <!-- Search Box for Entities -->
+                    <TextBox Grid.Row="4" 
+                             Watermark="Search entities..."
+                             Text="{Binding EntitySearchText}"
+                             Margin="0,0,0,10"
+                             IsVisible="{Binding !IsLoadingEntities}">
+                        <TextBox.InnerLeftContent>
+                            <PathIcon Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+                                      Width="16"
+                                      Height="16"
+                                      Margin="5,0,0,0"/>
+                        </TextBox.InnerLeftContent>
+                    </TextBox>
+                    
+                    <StackPanel Grid.Row="5" IsVisible="{Binding IsLoadingEntities}">
                         <Border 
                                 Background="{DynamicResource PrimaryBackgroundPanelBrush}"
                                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
@@ -144,16 +158,22 @@
                         </Border>
                     </StackPanel>
                     
-                    <TreeView Grid.Row="4" Name="EntitiesTree"
+                    <TreeView Grid.Row="5" Name="EntitiesTree"
                               ItemsSource="{Binding Entities}"
                               IsVisible="{Binding !IsLoadingEntities}">
                         <TreeView.ItemTemplate>
                             <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:EntityTreeItemViewModel">
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" IsVisible="{Binding IsVisible}">
                                     <TextBlock Text="{Binding DisplayText}" />
                                 </StackPanel>
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem" x:DataType="vm:EntityTreeItemViewModel">
+                                <Setter Property="IsVisible" Value="{Binding IsVisible}" />
+                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                            </Style>
+                        </TreeView.Styles>
                     </TreeView>
                 </Grid>
             </Border>

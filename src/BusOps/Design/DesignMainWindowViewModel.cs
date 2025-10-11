@@ -48,7 +48,7 @@ public class DesignMainWindowViewModel : MainWindowViewModel
         ]);
         SelectedEntity = Entities[0].Children[0];
         Messages.AddRange(SampleMessages.GenerateSampleMessages());
-        IsLoadingEntities = false;
+        IsLoadingEntities = true;
         IsLoadingMessages = false;
     }
 }

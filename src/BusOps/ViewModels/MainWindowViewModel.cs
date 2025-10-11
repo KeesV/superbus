@@ -23,6 +23,7 @@ public class MainWindowViewModel : ReactiveObject
     private string _currentConnectionString = string.Empty;
     private ServiceBusMessage? _selectedMessage;
     private bool? _selectAll = false;
+    private string _entitySearchText = string.Empty;
 
     public string Greeting
     {
@@ -73,6 +74,7 @@ public class MainWindowViewModel : ReactiveObject
         get => _selectedMessage;
         set => this.RaiseAndSetIfChanged(ref _selectedMessage, value);
     }
+    
     public bool HasSelectedMessage => SelectedMessage != null;
 
     public bool? SelectAll
@@ -85,6 +87,16 @@ public class MainWindowViewModel : ReactiveObject
             {
                 ToggleSelectAllMessages(value.Value);
             }
+        }
+    }
+
+    public string EntitySearchText
+    {
+        get => _entitySearchText;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _entitySearchText, value);
+            ApplyEntityFilter(value);
         }
     }
 
@@ -463,6 +475,17 @@ public class MainWindowViewModel : ReactiveObject
             }
 
             _logger.LogInformation("All messages deselected.");
+        }
+    }
+
+    private void ApplyEntityFilter(string filterText)
+    {
+        _logger.LogInformation("Applying entity filter: {FilterText}", filterText);
+
+        // Apply the filter to all entities recursively
+        foreach (var entity in Entities)
+        {
+            entity.ApplyFilter(filterText);
         }
     }
 }
