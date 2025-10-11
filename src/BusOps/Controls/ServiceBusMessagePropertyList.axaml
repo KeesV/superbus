@@ -25,9 +25,14 @@
                                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                 BorderThickness="0, 1, 0, 0"
                                 Padding="0,5,0,5">
+                            <Border.Styles>
+                                <Style Selector="Border:pointerover">
+                                    <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+                                </Style>
+                            </Border.Styles>
                             <Grid ColumnDefinitions="200,*" Margin="0,2">
-                                <TextBlock Grid.Column="0" FontSize="11" Text="{Binding Key}" />
-                                <TextBlock Grid.Column="1" FontSize="11" Text="{Binding Value}" TextWrapping="Wrap"/>
+                                <SelectableTextBlock Grid.Column="0" FontSize="11" Text="{Binding Key}" />
+                                <SelectableTextBlock Grid.Column="1" FontSize="11" Text="{Binding Value}" TextWrapping="Wrap"/>
                             </Grid>
                         </Border>
                     </DataTemplate>

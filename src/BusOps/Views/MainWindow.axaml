@@ -79,6 +79,82 @@
                 <TextBlock Text="{Binding DisplayText}" />
             </StackPanel>
         </DataTemplate>
+        
+        <ControlTheme
+            x:Key="GridHeaderCompatibleWithCenteredContent"
+            BasedOn="{StaticResource {x:Type DataGridColumnHeader}}"
+            TargetType="DataGridColumnHeader">
+            <Setter Property="Padding" Value="12,0,12,0" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Border
+                        x:Name="HeaderBorder"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <Grid Name="PART_ColumnHeaderRoot" ColumnDefinitions="*,Auto">
+
+                            <Panel HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                   VerticalAlignment="{TemplateBinding VerticalContentAlignment}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <ContentPresenter
+                                        x:Name="PART_ContentPresenter"
+                                        Margin="{TemplateBinding Padding}"
+                                        Content="{TemplateBinding Content}"
+                                        ContentTemplate="{TemplateBinding ContentTemplate}" />
+
+                                    <Path
+                                        Name="SortIcon"
+                                        Grid.Column="1"
+                                        Height="12"
+                                        MinWidth="20"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Fill="{TemplateBinding Foreground}"
+                                        IsVisible="False"
+                                        Stretch="Uniform" />
+                                </Grid>
+                            </Panel>
+
+                            <Rectangle
+                                Name="VerticalSeparator"
+                                Grid.Column="1"
+                                VerticalAlignment="Stretch"
+                                Fill="{TemplateBinding SeparatorBrush}"
+                                IsVisible="{TemplateBinding AreSeparatorsVisible}" />
+
+                            <Grid
+                                x:Name="FocusVisual"
+                                IsHitTestVisible="False"
+                                IsVisible="False">
+                                <Rectangle
+                                    x:Name="FocusVisualPrimary"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Fill="Transparent"
+                                    IsHitTestVisible="False"
+                                    Stroke="{DynamicResource DataGridCellFocusVisualPrimaryBrush}"
+                                    StrokeThickness="2" />
+                                <Rectangle
+                                    x:Name="FocusVisualSecondary"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Fill="Transparent"
+                                    IsHitTestVisible="False"
+                                    Stroke="{DynamicResource DataGridCellFocusVisualSecondaryBrush}"
+                                    StrokeThickness="1" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter>
+        </ControlTheme>
     </Window.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto">
@@ -221,8 +297,9 @@
                         </MultiBinding>
                     </Grid.IsVisible>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
                     
                     <!-- Messages List Section -->
@@ -231,17 +308,16 @@
                             CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}"
                             Padding="10"
                             Margin="5"
-                            Background="{DynamicResource PrimaryBackgroundPanelBrush}"
-                            MaxHeight="500">
+                            Background="{DynamicResource PrimaryBackgroundPanelBrush}">
 
-                            <StackPanel>
-                                <TextBlock 
+                            <Grid RowDefinitions="Auto, *">
+                                <TextBlock Grid.Row="0"
                                            Text="Messages" 
                                            FontWeight="SemiBold" 
                                            FontSize="16"
                                            Margin="0,0,0,10"/>
 
-                                <Grid>
+                                <Grid Grid.Row="1">
                                     <!-- Loading Indicator -->
                                     <TextBlock IsVisible="{Binding IsLoadingMessages}"
                                                Text="Loading messages..."
@@ -277,25 +353,38 @@
                                               CanUserResizeColumns="True"
                                               CanUserSortColumns="True"
                                               BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                              MaxHeight="400">
+                                              ColumnHeaderTheme="{DynamicResource GridHeaderCompatibleWithCenteredContent}">
                                         <DataGrid.IsVisible>
                                             <MultiBinding Converter="{x:Static BoolConverters.And}">
                                                 <Binding Path="!IsLoadingMessages"/>
                                                 <Binding Path="HasMessages"/>
                                             </MultiBinding>
                                         </DataGrid.IsVisible>
+                                        <DataGrid.Styles>
+                                            <Style Selector="DataGridCell">
+                                                <Setter Property="FontSize" Value="12"/>
+                                            </Style>
+                                            <Style Selector="DataGridColumnHeader">
+                                                <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundColor}" />
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                            </Style>
+                                        </DataGrid.Styles>
                                         <DataGrid.Columns>
                                             <!-- Checkbox Column with Select All Header -->
                                             <DataGridTemplateColumn Width="75">
                                                 <DataGridTemplateColumn.Header>
                                                     <CheckBox IsChecked="{Binding DataContext.SelectAll, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              Margin="0"
+                                                              Padding="0"
+                                                            ToolTip.Tip="Select All"
                                                               HorizontalAlignment="Center"
-                                                              ToolTip.Tip="Select All"/>
+                                                              HorizontalContentAlignment="Center" />
                                                 </DataGridTemplateColumn.Header>
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
                                                         <CheckBox IsChecked="{Binding IsSelected}"
-                                                                  HorizontalAlignment="Center"/>
+                                                                  HorizontalAlignment="Center"
+                                                                  Padding="0"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -325,18 +414,35 @@
                                                VerticalAlignment="Center"
                                                IsVisible="{Binding ShowNoMessagesForEntity}"/>
                                 </Grid>
-                            </StackPanel>
+                            </Grid>
                         </Border>
 
+                    <!-- Separator for sizing -->
+                    <GridSplitter Grid.Row="1"
+                                  Height="5"
+                                  Background="Transparent"
+                                  ResizeDirection="Rows"
+                                  HorizontalAlignment="Stretch"/>
+                    
                     <!-- Message Details Section -->
-                    <Border Grid.Row="1"
+                    <Border Grid.Row="2"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}"
                             Padding="10"
                             Margin="5"
                             Background="{DynamicResource PrimaryBackgroundPanelBrush}">
-                        <controls:ServiceBusMessageDetails DataContext="{Binding SelectedMessage }" />
+                        <Grid>
+                            <Border IsVisible="{Binding HasSelectedMessage}">
+                                <controls:ServiceBusMessageDetails DataContext="{Binding SelectedMessage }" />
+                            </Border>
+                            
+                            <TextBlock Text="Select a message to view details"
+                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding !HasSelectedMessage}"/>
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>

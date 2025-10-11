@@ -73,6 +73,7 @@ public class MainWindowViewModel : ReactiveObject
         get => _selectedMessage;
         set => this.RaiseAndSetIfChanged(ref _selectedMessage, value);
     }
+    public bool HasSelectedMessage => SelectedMessage != null;
 
     public bool? SelectAll
     {
@@ -155,6 +156,12 @@ public class MainWindowViewModel : ReactiveObject
                 this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
             });
 
+        this.WhenAnyValue(x => x.SelectedMessage)
+            .Subscribe(_ =>
+            {
+                this.RaisePropertyChanged(nameof(HasSelectedMessage));
+            });
+        
         Entities.CollectionChanged += (_, _) =>
         {
             this.RaisePropertyChanged(nameof(HasEntities));

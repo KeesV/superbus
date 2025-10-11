@@ -5,7 +5,7 @@
              xmlns:models="clr-namespace:BusOps.Core.Models;assembly=BusOps.Core"
              xmlns:design="clr-namespace:BusOps.Design"
              xmlns:controls="clr-namespace:BusOps.Controls"
-             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             xmlns:avaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="350"
              x:Class="BusOps.Controls.ServiceBusMessageDetails"
              x:DataType="models:ServiceBusMessage">
@@ -15,6 +15,13 @@
     </Design.DataContext>
     
     <TabControl>
+        <TabControl.Styles>
+            <Style Selector="TabItem">
+                <Setter Property="FontSize" Value="18" />
+                <Setter Property="Padding" Value="10,5,0,10" />
+            </Style>
+        </TabControl.Styles>
+        
         <TabItem Header="Properties">
             <Grid ColumnDefinitions="1*,1*" ColumnSpacing="10">
                 <controls:ServiceBusMessagePropertyList Grid.Column="0" Title="Broker Properties" Properties="{Binding BrokerProperties}" />
@@ -22,7 +29,7 @@
             </Grid>
         </TabItem>
         <TabItem Header="Body">
-            <AvaloniaEdit:TextEditor 
+            <avaloniaEdit:TextEditor 
                 FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
                 x:Name="BodyViewer"
                 IsReadOnly="True"
