@@ -7,7 +7,7 @@ namespace BusOps.ViewModels;
 /// <summary>
 /// ViewModel for individual connection list items
 /// </summary>
-public class ConnectionItemViewModel : ReactiveObject
+public class ConnectionItemViewModel : ViewModelBase
 {
     private readonly ServiceBusConnection _connection;
     private readonly MainWindowViewModel _mainViewModel;
@@ -29,7 +29,7 @@ public class ConnectionItemViewModel : ReactiveObject
 
     private async Task OnConnectAsync()
     {
-        await _mainViewModel.LoadEntitiesAsync(_connection.ConnectionString, _connection.Name);
+        await _mainViewModel.ConnectAsync(_connection.ConnectionString, _connection.Name);
     }
 
     public ServiceBusConnection GetConnection() => _connection;

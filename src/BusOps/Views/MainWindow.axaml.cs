@@ -25,13 +25,6 @@ public partial class MainWindow : Window
         // Set the dialog opening delegate
         viewModel.ShowAddConnectionDialog = ShowAddConnectionDialog;
         viewModel.ShowErrorDialog = ShowErrorDialog;
-        
-        // Wire up the TreeView selection changed event
-        var entitiesTree = this.FindControl<TreeView>("EntitiesTree");
-        if (entitiesTree != null)
-        {
-            entitiesTree.SelectionChanged += OnEntityTreeSelectionChanged;
-        }
     }
 
     private void InitializeComponent()
@@ -58,13 +51,5 @@ public partial class MainWindow : Window
         var dialogViewModel = ErrorDialogViewModel.FromException(title, exception);
         var dialog = new ErrorDialog(dialogViewModel);
         await dialog.ShowDialog(this);
-    }
-
-    private void OnEntityTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_viewModel != null && sender is TreeView treeView && treeView.SelectedItem is EntityTreeItemViewModel selectedEntity)
-        {
-            _viewModel.SelectedEntity = selectedEntity;
-        }
     }
 }

@@ -6,7 +6,7 @@ namespace BusOps.ViewModels;
 /// <summary>
 /// ViewModel for tree view items representing Service Bus entities
 /// </summary>
-public class EntityTreeItemViewModel : ReactiveObject
+public class EntityTreeItemViewModel : ViewModelBase
 {
     private string _name = string.Empty;
     private string _type = string.Empty;
