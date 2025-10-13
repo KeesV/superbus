@@ -2,7 +2,7 @@ using ReactiveUI;
 
 namespace BusOps.ViewModels;
 
-public class ErrorDialogViewModel : ReactiveObject
+public class ErrorDialogViewModel : ViewModelBase
 {
     private string _title = "Error";
     private string _errorDetails = string.Empty;

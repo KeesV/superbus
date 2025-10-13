@@ -63,5 +63,6 @@ public partial class App : Application
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddTransient<AddConnectionDialogViewModel>();
+        services.AddTransient<EntitiesTreeViewModel>();
     }
 }

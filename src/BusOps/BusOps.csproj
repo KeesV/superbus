@@ -35,4 +35,11 @@
     <ProjectReference Include="..\BusOps.Azure\BusOps.Azure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Views\EntitiesTreeView.axaml.cs">
+      <DependentUpon>EntitiesTreeView.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+
 </Project>

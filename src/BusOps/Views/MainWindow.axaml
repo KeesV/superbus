@@ -3,9 +3,7 @@
         xmlns:vm="using:BusOps.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:design="clr-namespace:BusOps.Design"
-        xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
-        xmlns:controls="clr-namespace:BusOps.Controls"
+        xmlns:views="clr-namespace:BusOps.Views"
         mc:Ignorable="d" d:DesignWidth="1400" d:DesignHeight="1000"
         x:Class="BusOps.Views.MainWindow"
         x:CompileBindings="False"
@@ -20,7 +18,7 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <design:DesignMainWindowViewModel/>
+        <vm:MainWindowViewModel/>
     </Design.DataContext>
 
     <Window.Resources>
@@ -72,13 +70,6 @@
                 </Grid>
             </Border>
         </DataTemplate>
-
-        <!-- DataTemplate for Entity Tree Items -->
-        <DataTemplate x:Key="EntityTreeItemTemplate" x:DataType="vm:EntityTreeItemViewModel">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding DisplayText}" />
-            </StackPanel>
-        </DataTemplate>
     </Window.Resources>
 
     <Grid RowDefinitions="Auto,*,Auto">
@@ -114,7 +105,7 @@
                     BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                     BorderThickness="0,0,0,0"
                     Margin="0">
-                <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,Auto,Auto,*">
+                <Grid Margin="10" RowDefinitions="Auto,Auto,Auto,*">
                     <TextBlock Grid.Row="0" Text="Connections" FontWeight="Bold" Margin="0,0,0,10"/>
                     <Button Grid.Row="1" Content="+ Add Connection"
                             HorizontalAlignment="Stretch"
@@ -127,54 +118,10 @@
                              Background="Transparent">
                     </ListBox>
     
-                    <TextBlock Grid.Row="3" Text="Service Bus Entities" FontWeight="Bold" Margin="0,20,0,10"/>
-                    
-                    <!-- Search Box for Entities -->
-                    <TextBox Grid.Row="4" 
-                             Watermark="Search entities..."
-                             Text="{Binding EntitySearchText}"
-                             Margin="0,0,0,10"
-                             IsVisible="{Binding !IsLoadingEntities}">
-                        <TextBox.InnerLeftContent>
-                            <PathIcon Data="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-                                      Width="16"
-                                      Height="16"
-                                      Margin="5,0,0,0"/>
-                        </TextBox.InnerLeftContent>
-                    </TextBox>
-                    
-                    <StackPanel Grid.Row="5" IsVisible="{Binding IsLoadingEntities}">
-                        <Border 
-                                Background="{DynamicResource PrimaryBackgroundPanelBrush}"
-                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                BorderThickness="1"
-                                CornerRadius="{DynamicResource PanelCornerRadius}"
-                                Height="60">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <avalonia:LoadingIndicator IsActive="{Binding IsLoadingEntities}" Mode="Arcs" SpeedRatio="1" />
-                                <TextBlock Text="Loading entities..." 
-                                           VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    
-                    <TreeView Grid.Row="5" Name="EntitiesTree"
-                              ItemsSource="{Binding Entities}"
-                              IsVisible="{Binding !IsLoadingEntities}">
-                        <TreeView.ItemTemplate>
-                            <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:EntityTreeItemViewModel">
-                                <StackPanel Orientation="Horizontal" IsVisible="{Binding IsVisible}">
-                                    <TextBlock Text="{Binding DisplayText}" />
-                                </StackPanel>
-                            </TreeDataTemplate>
-                        </TreeView.ItemTemplate>
-                        <TreeView.Styles>
-                            <Style Selector="TreeViewItem" x:DataType="vm:EntityTreeItemViewModel">
-                                <Setter Property="IsVisible" Value="{Binding IsVisible}" />
-                                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-                            </Style>
-                        </TreeView.Styles>
-                    </TreeView>
+                    <!-- Entities tree view -->
+                    <views:EntitiesTreeView Grid.Row="3" 
+                           IsVisible="{Binding IsConnected}" 
+                           Content="{Binding EntitiesTreeViewModel}"/>
                 </Grid>
             </Border>
             
@@ -187,141 +134,141 @@
     
             <!-- Right Panel - Main Content -->
             
-            <Grid Grid.Column="2" RowDefinitions="Auto,*">
-                <Border Grid.Row="0" Background="{DynamicResource ResourceKey=PrimaryBackgroundPanelBrush}"
-                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                        BorderThickness="1"
-                        Padding="5"
-                        Margin="5,10,5,0"
-                        CornerRadius="{DynamicResource PanelCornerRadius}">
-                    <!-- Toolbar -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-                        <Button Content="Refresh" Margin="0,0,5,0"/>
-                        <Button Content="Create Queue" Margin="0,0,5,0"/>
-                        <Button Content="Create Topic" Margin="0,0,5,0"/>
-                        <Button Content="Send Message" Margin="0,0,5,0"/>
-                        
-                        <!-- Message Limit Selector -->
-                        <StackPanel Orientation="Horizontal" Margin="20,0,0,0">
-                            <TextBlock Text="Max Messages:" 
-                                       VerticalAlignment="Center" 
-                                       Margin="0,0,5,0"/>
-                            <ComboBox SelectedItem="{Binding MaxMessagesToShow}"
-                                      ItemsSource="{Binding MessageLimitOptions}"
-                                      Width="100"
-                                      VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </StackPanel>
-                </Border>
-                <!-- Welcome Screen - Shown when no entities are loaded -->
-                <Border Grid.Row="1">
-                    <Border.IsVisible>
-                        <MultiBinding Converter="{x:Static BoolConverters.Or}">
-                            <Binding Path="!HasEntities" />
-                            <Binding Path="IsLoadingEntities" />
-                        </MultiBinding>
-                    </Border.IsVisible>
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock Text="Welcome to BusOps" FontSize="24" FontWeight="Bold"
-                                 HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                        <TextBlock Text="Azure Service Bus Management Tool" FontSize="16"
-                                 HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                        <Button Content="Create Your First Connection" 
-                                HorizontalAlignment="Center"
-                                Command="{Binding AddConnectionCommand}"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Master-Detail View - Shown when entities are loaded -->
-                <Grid Grid.Row="1">
-                    <Grid.IsVisible>
-                        <MultiBinding Converter="{x:Static BoolConverters.And}">
-                            <Binding Path="HasEntities" />
-                            <Binding Path="!IsLoadingEntities" />
-                        </MultiBinding>
-                    </Grid.IsVisible>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="1*"/>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="1*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <!-- Messages List Section -->
-                    <Border Grid.Row="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}"
-                            Padding="10"
-                            Margin="5"
-                            Background="{DynamicResource PrimaryBackgroundPanelBrush}">
-
-                            <Grid RowDefinitions="Auto, *">
-                                <TextBlock Grid.Row="0"
-                                           Text="Messages" 
-                                           FontWeight="SemiBold" 
-                                           FontSize="16"
-                                           Margin="0,0,0,10"/>
-
-                                <Grid Grid.Row="1">
-                                    <!-- Loading Indicator -->
-                                    <TextBlock IsVisible="{Binding IsLoadingMessages}"
-                                               Text="Loading messages..."
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"/>
-
-                                    <!-- No Selection Message - show when SelectedEntity is null -->
-                                    <TextBlock Text="Select a queue or subscription from the tree to view messages"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               Margin="20"
-                                               IsVisible="{Binding ShowNoSelectionMessage}"/>
-
-                                    <!-- Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription -->
-                                    <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
-                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               Margin="20"
-                                               IsVisible="{Binding ShowNonMessageableEntityMessage}"/>
-
-                                    <!-- Messages Table -->
-                                    <controls:ServiceBusMessagesGrid DataContext="{Binding}" />
-                                </Grid>
-                            </Grid>
-                        </Border>
-
-                    <!-- Separator for sizing -->
-                    <GridSplitter Grid.Row="1"
-                                  Height="5"
-                                  Background="Transparent"
-                                  ResizeDirection="Rows"
-                                  HorizontalAlignment="Stretch"/>
-                    
-                    <!-- Message Details Section -->
-                    <Border Grid.Row="2"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                            BorderThickness="1"
-                            CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}"
-                            Padding="10"
-                            Margin="5"
-                            Background="{DynamicResource PrimaryBackgroundPanelBrush}">
-                        <Grid>
-                            <Border IsVisible="{Binding HasSelectedMessage}">
-                                <controls:ServiceBusMessageDetails DataContext="{Binding SelectedMessage }" />
-                            </Border>
-                            
-                            <TextBlock Text="Select a message to view details"
-                                       Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       IsVisible="{Binding !HasSelectedMessage}"/>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </Grid>
+            <!-- <Grid Grid.Column="2" RowDefinitions="Auto,*"> -->
+            <!--     <Border Grid.Row="0" Background="{DynamicResource ResourceKey=PrimaryBackgroundPanelBrush}" -->
+            <!--             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" -->
+            <!--             BorderThickness="1" -->
+            <!--             Padding="5" -->
+            <!--             Margin="5,10,5,0" -->
+            <!--             CornerRadius="{DynamicResource PanelCornerRadius}"> -->
+            <!--         ~1~ Toolbar @1@ -->
+            <!--         <StackPanel Orientation="Horizontal" Margin="0,0,0,0"> -->
+            <!--             <Button Content="Refresh" Margin="0,0,5,0"/> -->
+            <!--             <Button Content="Create Queue" Margin="0,0,5,0"/> -->
+            <!--             <Button Content="Create Topic" Margin="0,0,5,0"/> -->
+            <!--             <Button Content="Send Message" Margin="0,0,5,0"/> -->
+            <!--              -->
+            <!--             ~1~ Message Limit Selector @1@ -->
+            <!--             <StackPanel Orientation="Horizontal" Margin="20,0,0,0"> -->
+            <!--                 <TextBlock Text="Max Messages:"  -->
+            <!--                            VerticalAlignment="Center"  -->
+            <!--                            Margin="0,0,5,0"/> -->
+            <!--                 <ComboBox SelectedItem="{Binding MaxMessagesToShow}" -->
+            <!--                           ItemsSource="{Binding MessageLimitOptions}" -->
+            <!--                           Width="100" -->
+            <!--                           VerticalAlignment="Center"/> -->
+            <!--             </StackPanel> -->
+            <!--         </StackPanel> -->
+            <!--     </Border> -->
+            <!--     ~1~ Welcome Screen - Shown when no entities are loaded @1@ -->
+            <!--     <Border Grid.Row="1"> -->
+            <!--         <Border.IsVisible> -->
+            <!--             <MultiBinding Converter="{x:Static BoolConverters.Or}"> -->
+            <!--                 <Binding Path="!HasEntities" /> -->
+            <!--                 <Binding Path="IsLoadingEntities" /> -->
+            <!--             </MultiBinding> -->
+            <!--         </Border.IsVisible> -->
+            <!--         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"> -->
+            <!--             <TextBlock Text="Welcome to BusOps" FontSize="24" FontWeight="Bold" -->
+            <!--                      HorizontalAlignment="Center" Margin="0,0,0,20"/> -->
+            <!--             <TextBlock Text="Azure Service Bus Management Tool" FontSize="16" -->
+            <!--                      HorizontalAlignment="Center" Margin="0,0,0,20"/> -->
+            <!--             <Button Content="Create Your First Connection"  -->
+            <!--                     HorizontalAlignment="Center" -->
+            <!--                     Command="{Binding AddConnectionCommand}"/> -->
+            <!--         </StackPanel> -->
+            <!--     </Border> -->
+            <!-- -->
+            <!--     ~1~ Master-Detail View - Shown when entities are loaded @1@ -->
+            <!--     <Grid Grid.Row="1"> -->
+            <!--         <Grid.IsVisible> -->
+            <!--             <MultiBinding Converter="{x:Static BoolConverters.And}"> -->
+            <!--                 <Binding Path="HasEntities" /> -->
+            <!--                 <Binding Path="!IsLoadingEntities" /> -->
+            <!--             </MultiBinding> -->
+            <!--         </Grid.IsVisible> -->
+            <!--         <Grid.RowDefinitions> -->
+            <!--             <RowDefinition Height="1*"/> -->
+            <!--             <RowDefinition Height="Auto" /> -->
+            <!--             <RowDefinition Height="1*"/> -->
+            <!--         </Grid.RowDefinitions> -->
+            <!--          -->
+            <!--         ~1~ Messages List Section @1@ -->
+            <!--         <Border Grid.Row="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" -->
+            <!--                 BorderThickness="1" -->
+            <!--                 CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}" -->
+            <!--                 Padding="10" -->
+            <!--                 Margin="5" -->
+            <!--                 Background="{DynamicResource PrimaryBackgroundPanelBrush}"> -->
+            <!-- -->
+            <!--                 <Grid RowDefinitions="Auto, *"> -->
+            <!--                     <TextBlock Grid.Row="0" -->
+            <!--                                Text="Messages"  -->
+            <!--                                FontWeight="SemiBold"  -->
+            <!--                                FontSize="16" -->
+            <!--                                Margin="0,0,0,10"/> -->
+            <!-- -->
+            <!--                     <Grid Grid.Row="1"> -->
+            <!--                         ~1~ Loading Indicator @1@ -->
+            <!--                         <TextBlock IsVisible="{Binding IsLoadingMessages}" -->
+            <!--                                    Text="Loading messages..." -->
+            <!--                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+            <!--                                    HorizontalAlignment="Center" -->
+            <!--                                    VerticalAlignment="Center"/> -->
+            <!-- -->
+            <!--                         ~1~ No Selection Message - show when SelectedEntity is null @1@ -->
+            <!--                         <TextBlock Text="Select a queue or subscription from the tree to view messages" -->
+            <!--                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+            <!--                                    HorizontalAlignment="Center" -->
+            <!--                                    VerticalAlignment="Center" -->
+            <!--                                    TextWrapping="Wrap" -->
+            <!--                                    Margin="20" -->
+            <!--                                    IsVisible="{Binding ShowNoSelectionMessage}"/> -->
+            <!-- -->
+            <!--                         ~1~ Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription @1@ -->
+            <!--                         <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)" -->
+            <!--                                    Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+            <!--                                    HorizontalAlignment="Center" -->
+            <!--                                    VerticalAlignment="Center" -->
+            <!--                                    TextWrapping="Wrap" -->
+            <!--                                    Margin="20" -->
+            <!--                                    IsVisible="{Binding ShowNonMessageableEntityMessage}"/> -->
+            <!-- -->
+            <!--                         ~1~ Messages Table @1@ -->
+            <!--                         <controls:ServiceBusMessagesGrid DataContext="{Binding}" /> -->
+            <!--                     </Grid> -->
+            <!--                 </Grid> -->
+            <!--             </Border> -->
+            <!-- -->
+            <!--         ~1~ Separator for sizing @1@ -->
+            <!--         <GridSplitter Grid.Row="1" -->
+            <!--                       Height="5" -->
+            <!--                       Background="Transparent" -->
+            <!--                       ResizeDirection="Rows" -->
+            <!--                       HorizontalAlignment="Stretch"/> -->
+            <!--          -->
+            <!--         ~1~ Message Details Section @1@ -->
+            <!--         <Border Grid.Row="2" -->
+            <!--                 BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" -->
+            <!--                 BorderThickness="1" -->
+            <!--                 CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}" -->
+            <!--                 Padding="10" -->
+            <!--                 Margin="5" -->
+            <!--                 Background="{DynamicResource PrimaryBackgroundPanelBrush}"> -->
+            <!--             <Grid> -->
+            <!--                 <Border IsVisible="{Binding HasSelectedMessage}"> -->
+            <!--                     <controls:ServiceBusMessageDetails DataContext="{Binding SelectedMessage }" /> -->
+            <!--                 </Border> -->
+            <!--                  -->
+            <!--                 <TextBlock Text="Select a message to view details" -->
+            <!--                            Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+            <!--                            HorizontalAlignment="Center" -->
+            <!--                            VerticalAlignment="Center" -->
+            <!--                            IsVisible="{Binding !HasSelectedMessage}"/> -->
+            <!--             </Grid> -->
+            <!--         </Border> -->
+            <!--     </Grid> -->
+            <!-- </Grid> -->
 
         </Grid>
     

@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BusOps.ViewModels;
 
-public class AddConnectionDialogViewModel : ReactiveObject
+public class AddConnectionDialogViewModel : ViewModelBase
 {
     private readonly IServiceBusConnectionService _connectionService;
     private readonly ILogger<AddConnectionDialogViewModel>? _logger;
