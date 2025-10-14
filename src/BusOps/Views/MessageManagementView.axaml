@@ -1,0 +1,206 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:BusOps.ViewModels"
+             xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
+             xmlns:controls="clr-namespace:BusOps.Controls"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="BusOps.Views.MessageManagementView"
+             x:DataType="vm:MessageManagementViewModel">
+    <Design.DataContext>
+        <vm:MessageManagementViewModel />
+    </Design.DataContext>
+    
+    <Grid RowDefinitions="1*,Auto,1*">
+        <Border Grid.Row="0" Background="{DynamicResource ResourceKey=PrimaryBackgroundPanelBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                Padding="5"
+                Margin="5,10,5,0"
+                CornerRadius="{DynamicResource PanelCornerRadius}">
+            
+            <Grid>
+                    <!-- No Selection Message - show when SelectedEntity is null -->
+                    <TextBlock Text="Select a queue or subscription from the tree to view messages"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="20"
+                               IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNull}}"
+                               />
+                    
+                    <!-- Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription -->
+                    <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Margin="20">
+                        <TextBlock.IsVisible>
+                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                <Binding Path="SelectedEntityIsManageable" Converter="{x:Static BoolConverters.Not}"/>
+                                <Binding Path="SelectedEntity" Converter="{x:Static ObjectConverters.IsNotNull}"/>
+                            </MultiBinding>
+                        </TextBlock.IsVisible>
+                    </TextBlock>
+                    
+                    <!-- Loading Indicator - show when loading messages -->
+                    <Grid Width="400" Height="100" IsVisible="{Binding IsLoadingMessages}">
+                        <Border 
+                            Background="{DynamicResource PrimaryBackgroundPanelBrush}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource PanelCornerRadius}">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <avalonia:LoadingIndicator IsActive="{Binding IsLoadingMessages}" Mode="Arcs" SpeedRatio="1" />
+                                <TextBlock Text="Loading entities..." 
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                    
+                    <controls:ServiceBusMessagesGrid 
+                        IsVisible="{Binding HasMessages}" 
+                        Messages="{Binding Messages}" 
+                        SelectedMessage="{Binding SelectedMessage}" />
+                    
+                </Grid>
+        </Border>
+        
+        <!-- Separator for sizing -->
+        <GridSplitter Grid.Row="1"
+                      Height="5"
+                      Background="Transparent"
+                      ResizeDirection="Rows"
+                      HorizontalAlignment="Stretch"/>
+        
+        <!-- Details panel -->
+        <Border Grid.Row="2" Background="{DynamicResource ResourceKey=PrimaryBackgroundPanelBrush}"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                Padding="5"
+                Margin="5,0,5,5"
+                CornerRadius="{DynamicResource PanelCornerRadius}">
+        </Border>
+        
+        
+        <!-- <Border Grid.Row="0" Background="{DynamicResource ResourceKey=PrimaryBackgroundPanelBrush}" -->
+        <!--         BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" -->
+        <!--         BorderThickness="1" -->
+        <!--         Padding="5" -->
+        <!--         Margin="5,10,5,0" -->
+        <!--         CornerRadius="{DynamicResource PanelCornerRadius}"> -->
+        <!--     ~1~ Toolbar @1@ -->
+        <!--     <StackPanel Orientation="Horizontal" Margin="0,0,0,0"> -->
+        <!--         <Button Content="Refresh" Margin="0,0,5,0"/> -->
+        <!--         <Button Content="Create Queue" Margin="0,0,5,0"/> -->
+        <!--         <Button Content="Create Topic" Margin="0,0,5,0"/> -->
+        <!--         <Button Content="Send Message" Margin="0,0,5,0"/> -->
+        <!-- -->
+        <!--         ~1~ Message Limit Selector @1@ -->
+        <!--         <StackPanel Orientation="Horizontal" Margin="20,0,0,0"> -->
+        <!--             <TextBlock Text="Max Messages:" -->
+        <!--                        VerticalAlignment="Center" -->
+        <!--                        Margin="0,0,5,0"/> -->
+        <!--             <ComboBox SelectedItem="{Binding MaxMessagesToShow}" -->
+        <!--                       ItemsSource="{Binding MessageLimitOptions}" -->
+        <!--                       Width="100" -->
+        <!--                       VerticalAlignment="Center"/> -->
+        <!--         </StackPanel> -->
+        <!--     </StackPanel> -->
+        <!-- </Border> -->
+        <!-- -->
+        <!-- -->
+        <!-- ~1~ Master-Detail View - Shown when entities are loaded @1@ -->
+        <!-- <Grid Grid.Row="1"> -->
+        <!--     <Grid.IsVisible> -->
+        <!--         <MultiBinding Converter="{x:Static BoolConverters.And}"> -->
+        <!--             <Binding Path="HasEntities" /> -->
+        <!--             <Binding Path="!IsLoadingEntities" /> -->
+        <!--         </MultiBinding> -->
+        <!--     </Grid.IsVisible> -->
+        <!--     <Grid.RowDefinitions> -->
+        <!--         <RowDefinition Height="1*"/> -->
+        <!--         <RowDefinition Height="Auto" /> -->
+        <!--         <RowDefinition Height="1*"/> -->
+        <!--     </Grid.RowDefinitions> -->
+        <!-- -->
+        <!--     ~1~ Messages List Section @1@ -->
+        <!--     <Border Grid.Row="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" -->
+        <!--             BorderThickness="1" -->
+        <!--             CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}" -->
+        <!--             Padding="10" -->
+        <!--             Margin="5" -->
+        <!--             Background="{DynamicResource PrimaryBackgroundPanelBrush}"> -->
+        <!-- -->
+        <!--             <Grid RowDefinitions="Auto, *"> -->
+        <!--                 <TextBlock Grid.Row="0" -->
+        <!--                            Text="Messages" -->
+        <!--                            FontWeight="SemiBold" -->
+        <!--                            FontSize="16" -->
+        <!--                            Margin="0,0,0,10"/> -->
+        <!-- -->
+        <!--                 <Grid Grid.Row="1"> -->
+        <!--                     ~1~ Loading Indicator @1@ -->
+        <!--                     <TextBlock IsVisible="{Binding IsLoadingMessages}" -->
+        <!--                                Text="Loading messages..." -->
+        <!--                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+        <!--                                HorizontalAlignment="Center" -->
+        <!--                                VerticalAlignment="Center"/> -->
+        <!-- -->
+        <!--                     ~1~ No Selection Message - show when SelectedEntity is null @1@ -->
+        <!--                     <TextBlock Text="Select a queue or subscription from the tree to view messages" -->
+        <!--                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+        <!--                                HorizontalAlignment="Center" -->
+        <!--                                VerticalAlignment="Center" -->
+        <!--                                TextWrapping="Wrap" -->
+        <!--                                Margin="20" -->
+        <!--                                IsVisible="{Binding ShowNoSelectionMessage}"/> -->
+        <!-- -->
+        <!--                     ~1~ Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription @1@ -->
+        <!--                     <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)" -->
+        <!--                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+        <!--                                HorizontalAlignment="Center" -->
+        <!--                                VerticalAlignment="Center" -->
+        <!--                                TextWrapping="Wrap" -->
+        <!--                                Margin="20" -->
+        <!--                                IsVisible="{Binding ShowNonMessageableEntityMessage}"/> -->
+        <!-- -->
+        <!--                     ~1~ Messages Table @1@ -->
+        <!--                     <controls:ServiceBusMessagesGrid DataContext="{Binding}" /> -->
+        <!--                 </Grid> -->
+        <!--             </Grid> -->
+        <!--         </Border> -->
+        <!-- -->
+        <!--     ~1~ Separator for sizing @1@ -->
+        <!--     <GridSplitter Grid.Row="1" -->
+        <!--                   Height="5" -->
+        <!--                   Background="Transparent" -->
+        <!--                   ResizeDirection="Rows" -->
+        <!--                   HorizontalAlignment="Stretch"/> -->
+        <!-- -->
+        <!--     ~1~ Message Details Section @1@ -->
+        <!--     <Border Grid.Row="2" -->
+        <!--             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" -->
+        <!--             BorderThickness="1" -->
+        <!--             CornerRadius="{DynamicResource ResourceKey=PanelCornerRadius}" -->
+        <!--             Padding="10" -->
+        <!--             Margin="5" -->
+        <!--             Background="{DynamicResource PrimaryBackgroundPanelBrush}"> -->
+        <!--         <Grid> -->
+        <!--             <Border IsVisible="{Binding HasSelectedMessage}"> -->
+        <!--                 <controls:ServiceBusMessageDetails DataContext="{Binding SelectedMessage }" /> -->
+        <!--             </Border> -->
+        <!-- -->
+        <!--             <TextBlock Text="Select a message to view details" -->
+        <!--                        Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" -->
+        <!--                        HorizontalAlignment="Center" -->
+        <!--                        VerticalAlignment="Center" -->
+        <!--                        IsVisible="{Binding !HasSelectedMessage}"/> -->
+        <!--         </Grid> -->
+        <!--     </Border> -->
+        <!-- </Grid> -->
+    </Grid>
+</UserControl>

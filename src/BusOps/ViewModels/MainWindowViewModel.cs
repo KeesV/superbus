@@ -15,7 +15,7 @@ public class MainWindowViewModel : ViewModelBase
     private readonly IServiceBusConnectionService _connectionService;
     private readonly IServiceBusManagementService _managementService;
     private readonly IServiceBusMessageService _messageService;
-    private readonly ILogger<MainWindowViewModel> _logger;
+    private readonly ILogger<MainWindowViewModel>? _logger;
 
     private bool _isConnected;
     private string _statusText = "Ready";
@@ -109,24 +109,28 @@ public class MainWindowViewModel : ViewModelBase
         get => _selectedEntity;
         set
         {
-            _logger.LogInformation("Setting SelectedEntity to {EntityName} of type {EntityType}",
+            _logger?.LogInformation("Setting SelectedEntity to {EntityName} of type {EntityType}",
                 value?.Name ?? "null", value?.Type ?? "null");
             this.RaiseAndSetIfChanged(ref _selectedEntity, value);
         }
     }
+    
+    public MessageManagementViewModel MessageManagementViewModel { get; protected set; }
 
     public MainWindowViewModel(
         IServiceBusConnectionService connectionService,
         IServiceBusManagementService managementService,
         IServiceBusMessageService messageService,
-        ILogger<MainWindowViewModel> logger,
-        EntitiesTreeViewModel entitiesTreeViewModel)
+        ILogger<MainWindowViewModel>? logger,
+        EntitiesTreeViewModel entitiesTreeViewModel,
+        MessageManagementViewModel messageManagementViewModel)
     {
         _connectionService = connectionService;
         _managementService = managementService;
         _messageService = messageService;
         _logger = logger;
         EntitiesTreeViewModel = entitiesTreeViewModel;
+        MessageManagementViewModel = messageManagementViewModel;
 
         AddConnectionCommand = ReactiveCommand.CreateFromTask(OnAddConnectionAsync);
         
@@ -159,6 +163,13 @@ public class MainWindowViewModel : ViewModelBase
         //         this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
         //     });
 
+        this.WhenAnyValue(x => x.EntitiesTreeViewModel.SelectedEntity)
+            .Subscribe(_ =>
+            {
+                SelectedEntity = EntitiesTreeViewModel.SelectedEntity;
+                MessageManagementViewModel.SelectedEntity = SelectedEntity;
+            });
+        
         this.WhenAnyValue(x => x.SelectedMessage)
             .Subscribe(_ =>
             {
@@ -174,7 +185,13 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
 
-    public MainWindowViewModel() : this(null!, null!, null!, null!, new EntitiesTreeViewModel())
+    public MainWindowViewModel() : this(
+        null!, 
+        null!, 
+        null!, 
+        null!, 
+        new EntitiesTreeViewModel(),
+        new MessageManagementViewModel(null, null))
     {
         if(!Avalonia.Controls.Design.IsDesignMode)
             throw new NotSupportedException("This constructor is only for Design mode.");
@@ -188,7 +205,7 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            _logger.LogInformation("Loading connections...");
+            _logger?.LogInformation("Loading connections...");
             var connections = await _connectionService.GetConnectionsAsync();
             
             Connections.Clear();
@@ -198,11 +215,11 @@ public class MainWindowViewModel : ViewModelBase
                 Connections.Add(connectionViewModel);
             }
             
-            _logger.LogInformation("Loaded {Count} connections", Connections.Count);
+            _logger?.LogInformation("Loaded {Count} connections", Connections.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to load connections");
+            _logger?.LogError(ex, "Failed to load connections");
         }
     }
 
@@ -223,7 +240,7 @@ public class MainWindowViewModel : ViewModelBase
             StatusText = "Connecting...";
             ConnectionStatus = $"Connecting to {connectionName}...";
             
-            _logger.LogInformation("Connecting to Service Bus: {ConnectionName}", connectionName);
+            _logger?.LogInformation("Connecting to Service Bus: {ConnectionName}", connectionName);
             
             await _managementService.ConnectAsync(connectionString);
             
@@ -237,7 +254,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             StatusText = "Connection failed";
             ConnectionStatus = "Connection failed";
-            _logger.LogError(ex, "Exception while connecting to Service Bus");
+            _logger?.LogError(ex, "Exception while connecting to Service Bus");
             
             // Show error dialog with exception details
             if (ShowErrorDialog != null)
@@ -365,7 +382,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private void ToggleSelectAllMessages(bool selectAll)
     {
-        _logger.LogInformation("ToggleSelectAllMessages called with selectAll={SelectAll}", selectAll);
+        _logger?.LogInformation("ToggleSelectAllMessages called with selectAll={SelectAll}", selectAll);
 
         if (selectAll)
         {
@@ -381,7 +398,7 @@ public class MainWindowViewModel : ViewModelBase
                 message.IsSelected = true;
             }
 
-            _logger.LogInformation("All messages selected. Messages.Count={Count}", Messages.Count);
+            _logger?.LogInformation("All messages selected. Messages.Count={Count}", Messages.Count);
         }
         else
         {
@@ -391,7 +408,7 @@ public class MainWindowViewModel : ViewModelBase
                 message.IsSelected = false;
             }
 
-            _logger.LogInformation("All messages deselected.");
+            _logger?.LogInformation("All messages deselected.");
         }
     }
 }

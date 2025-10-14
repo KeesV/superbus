@@ -44,6 +44,7 @@ public class EntityTreeItemViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isVisible, value);
     }
 
+    public EntityTreeItemViewModel? Parent { get; set; }
     public ObservableCollection<EntityTreeItemViewModel> Children { get; } = new();
 
     public string DisplayText => $"{Name} ({MessageCount})";

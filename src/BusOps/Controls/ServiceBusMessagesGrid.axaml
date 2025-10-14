@@ -3,10 +3,11 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:dd="clr-namespace:BusOps.Design"
+             xmlns:controls="clr-namespace:BusOps.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="BusOps.Controls.ServiceBusMessagesGrid"
-             x:CompileBindings="False"
-             d:DataContext="{x:Static dd:DesignData.DesignMainWindowViewModel}">
+             x:DataType="controls:ServiceBusMessagesGrid"
+             x:CompileBindings="True">
     
     <UserControl.Resources>
         <ControlTheme
@@ -85,9 +86,8 @@
             </Setter>
         </ControlTheme>
     </UserControl.Resources>
-
-    <DataGrid ItemsSource="{Binding Messages}"
-              SelectedItem="{Binding SelectedMessage}"
+    <DataGrid ItemsSource="{Binding $parent[controls:ServiceBusMessagesGrid].Messages}"
+              SelectedItem="{Binding $parent[controls:ServiceBusMessagesGrid].SelectedMessage}"
               IsReadOnly="True"
               GridLinesVisibility="All"
               BorderThickness="1"
@@ -109,12 +109,13 @@
             <!-- Checkbox Column with Select All Header -->
             <DataGridTemplateColumn Width="75">
                 <DataGridTemplateColumn.Header>
-                    <CheckBox IsChecked="{Binding DataContext.SelectAll, RelativeSource={RelativeSource AncestorType=Window}}"
-                              Margin="0"
-                              Padding="0"
-                              ToolTip.Tip="Select All"
-                              HorizontalAlignment="Center"
-                              HorizontalContentAlignment="Center" />
+                    <!-- IsChecked="{Binding DataContext.SelectAll, RelativeSource={RelativeSource AncestorType=WiINTROMUZIEK ndow}}" -->
+                    <CheckBox 
+                        Margin="0"
+                        Padding="0"
+                        ToolTip.Tip="Select All"
+                        HorizontalAlignment="Center"
+                        HorizontalContentAlignment="Center" />
                 </DataGridTemplateColumn.Header>
                 <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>

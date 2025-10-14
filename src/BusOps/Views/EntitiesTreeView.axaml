@@ -6,7 +6,8 @@
              xmlns:vm="clr-namespace:BusOps.ViewModels"
              x:DataType="vm:EntitiesTreeViewModel"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="BusOps.Views.EntitiesTreeView">
+             x:Class="BusOps.Views.EntitiesTreeView"
+             x:Name="EntitiesTreeViewControl">
     
     <Design.DataContext>
         <vm:EntitiesTreeViewModel />
@@ -55,6 +56,7 @@
         
         <TreeView Grid.Row="2" Name="EntitiesTree"
                   ItemsSource="{Binding Entities}"
+                  SelectedItem="{Binding SelectedEntity}"
                   IsVisible="{Binding !IsLoadingEntities}">
             <TreeView.ItemTemplate>
                 <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:EntityTreeItemViewModel">
