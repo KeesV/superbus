@@ -9,7 +9,6 @@ namespace BusOps.Views;
 public partial class MainWindow : Window
 {
     private readonly IServiceProvider _serviceProvider = null!;
-    private MainWindowViewModel? _viewModel;
 
     public MainWindow()
     {
@@ -19,7 +18,6 @@ public partial class MainWindow : Window
     public MainWindow(MainWindowViewModel viewModel, IServiceProvider serviceProvider) : this()
     {
         _serviceProvider = serviceProvider;
-        _viewModel = viewModel;
         DataContext = viewModel;
         
         // Set the dialog opening delegate

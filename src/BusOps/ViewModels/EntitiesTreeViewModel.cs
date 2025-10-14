@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
-using Avalonia.Controls;
 using BusOps.Core.Interfaces;
 using BusOps.Core.Models;
 using BusOps.Design;
@@ -115,8 +114,7 @@ public class EntitiesTreeViewModel : ViewModelBase
 
             // Load topics
             _logger.LogInformation("Loading topics...");
-            //var topics = (await _managementService.GetTopicsAsync()).ToList();
-            List<ServiceBusTopic> topics = [];
+            var topics = (await _managementService.GetTopicsAsync()).ToList();
             var topicsNode = new EntityTreeItemViewModel
             {
                 Name = "Topics",
@@ -141,7 +139,8 @@ public class EntitiesTreeViewModel : ViewModelBase
                     {
                         Name = subscription.Name,
                         Type = "Subscription",
-                        MessageCount = subscription.MessageCount
+                        MessageCount = subscription.MessageCount,
+                        Parent = topicNode
                     });
                 }
 
@@ -170,13 +169,5 @@ public class EntitiesTreeViewModel : ViewModelBase
         {
             IsLoadingEntities = false;
         }
-    }
-    
-    public void OnEntityTreeSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        // if (_viewModel != null && sender is TreeView treeView && treeView.SelectedItem is EntityTreeItemViewModel selectedEntity)
-        // {
-        //     _viewModel.SelectedEntity = selectedEntity;
-        // }
     }
 }
