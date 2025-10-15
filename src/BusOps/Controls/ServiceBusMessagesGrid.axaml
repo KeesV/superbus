@@ -5,6 +5,7 @@
              xmlns:controls="clr-namespace:BusOps.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="BusOps.Controls.ServiceBusMessagesGrid"
+             x:Name="Root"
              x:DataType="controls:ServiceBusMessagesGrid"
              x:CompileBindings="True">
     
@@ -85,8 +86,8 @@
             </Setter>
         </ControlTheme>
     </UserControl.Resources>
-    <DataGrid ItemsSource="{Binding $parent[controls:ServiceBusMessagesGrid].Messages}"
-              SelectedItem="{Binding $parent[controls:ServiceBusMessagesGrid].SelectedMessage}"
+    <DataGrid ItemsSource="{Binding #Root.Messages}"
+              SelectedItem="{Binding #Root.SelectedMessage}"
               IsReadOnly="True"
               GridLinesVisibility="All"
               BorderThickness="1"
@@ -136,7 +137,7 @@
                                 Width="200"/>
             <DataGridTextColumn Header="Body"
                                 Binding="{Binding Body}"
-                                Width="200"/>
+                                Width="*"/>
         </DataGrid.Columns>
     </DataGrid>
 </UserControl>

@@ -14,38 +14,51 @@
     <Design.DataContext>
         <design:DesignServiceBusMessage />
     </Design.DataContext>
-    
-    <Grid RowDefinitions="Auto, Auto, *">
-        <TextBlock Grid.Row="0" Text="{Binding Title, ElementName=Root}" />
-        <Border Grid.Row="1"
-            Margin="0,5,0,0"
-            Padding="0,5,0,5">
-            <Grid ColumnDefinitions="200,*" Margin="0,2">
-                <TextBlock Grid.Column="0" Text="Key" Margin="0,0,10,0"/>
-                <TextBlock Grid.Column="1" Text="Value" TextWrapping="Wrap"/>
-            </Grid>
-        </Border>
-        <ScrollViewer Grid.Row="2">
-            <ItemsControl ItemsSource="{Binding Properties, ElementName=Root}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="models:ServiceBusMessageProperty">
-                        <Border
-                                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
-                                BorderThickness="0, 1, 0, 0"
-                                Padding="0,5,0,5">
-                            <Border.Styles>
-                                <Style Selector="Border:pointerover">
-                                    <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
-                                </Style>
-                            </Border.Styles>
-                            <Grid ColumnDefinitions="200,*" Margin="0,2">
-                                <SelectableTextBlock Grid.Column="0" FontSize="11" Text="{Binding Key}" />
-                                <SelectableTextBlock Grid.Column="1" FontSize="11" Text="{Binding Value}" TextWrapping="Wrap"/>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+        
+    <Grid RowDefinitions="Auto, *">
+        <TextBlock Grid.Row="0" 
+                   Text="{Binding Title, ElementName=Root}" 
+                   Margin="0,0,0,5"
+                   />
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding #Root.Properties}"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  AutoGenerateColumns="False"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                  >
+            <DataGrid.Styles>
+                <Style Selector="DataGridCell">
+                    <Setter Property="FontSize" Value="12" />
+                </Style>
+                <Style Selector="SelectableTextBlock">
+                    <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+                    <Setter Property="VerticalAlignment" Value="Center" />
+                    <Setter Property="Padding" Value="10, 0" />
+                </Style>
+                <Style Selector="DataGridColumnHeader">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryBackgroundColor}" />
+                </Style>
+            </DataGrid.Styles>
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Key" Width="1*"> 
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock Text="{Binding Key}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Value" Width="2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <SelectableTextBlock 
+                                Text="{Binding Value}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>
