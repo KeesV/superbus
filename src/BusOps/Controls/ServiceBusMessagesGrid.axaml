@@ -2,7 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:dd="clr-namespace:BusOps.Design"
              xmlns:controls="clr-namespace:BusOps.Controls"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="BusOps.Controls.ServiceBusMessagesGrid"
@@ -109,8 +108,8 @@
             <!-- Checkbox Column with Select All Header -->
             <DataGridTemplateColumn Width="75">
                 <DataGridTemplateColumn.Header>
-                    <!-- IsChecked="{Binding DataContext.SelectAll, RelativeSource={RelativeSource AncestorType=WiINTROMUZIEK ndow}}" -->
                     <CheckBox 
+                        IsChecked="{Binding $parent[controls:ServiceBusMessagesGrid].SelectAllChecked}"
                         Margin="0"
                         Padding="0"
                         ToolTip.Tip="Select All"

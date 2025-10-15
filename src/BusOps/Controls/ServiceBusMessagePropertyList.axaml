@@ -5,7 +5,8 @@
              xmlns:models="clr-namespace:BusOps.Core.Models;assembly=BusOps.Core"
              x:Name="Root"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="BusOps.Controls.ServiceBusMessagePropertyList">
+             x:Class="BusOps.Controls.ServiceBusMessagePropertyList"
+             x:CompileBindings="True">
     
     <Grid RowDefinitions="Auto, Auto, *">
         <TextBlock Grid.Row="0" Text="{Binding Title, ElementName=Root}" />

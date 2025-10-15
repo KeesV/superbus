@@ -22,8 +22,19 @@ public partial class ServiceBusMessagesGrid : UserControl
             defaultBindingMode: BindingMode.TwoWay);
 
     private IEnumerable<ServiceBusMessage> _messages = new AvaloniaList<ServiceBusMessage>();
-    private ServiceBusMessage? _selectedMessage ;
-    
+    private ServiceBusMessage? _selectedMessage;
+    private bool _selectAllChecked;
+
+    public bool SelectAllChecked
+    {
+        get => _selectAllChecked;
+        set
+        {
+            _selectAllChecked = value;
+            ToggleSelectAllMessages(value);
+        }
+    }
+
     public IEnumerable<ServiceBusMessage> Messages
     {
         get => _messages;
@@ -39,5 +50,31 @@ public partial class ServiceBusMessagesGrid : UserControl
     public ServiceBusMessagesGrid()
     {
         InitializeComponent();
+    }
+    
+    private void ToggleSelectAllMessages(bool selectAll)
+    {
+        if (selectAll)
+        {
+            // Clear existing selections if any
+            foreach (var message in Messages)
+            {
+                message.IsSelected = false;
+            }
+
+            // Select all messages
+            foreach (var message in Messages)
+            {
+                message.IsSelected = true;
+            }
+        }
+        else
+        {
+            // Deselect all messages
+            foreach (var message in Messages)
+            {
+                message.IsSelected = false;
+            }
+        }
     }
 }
