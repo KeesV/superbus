@@ -114,7 +114,8 @@ public class EntitiesTreeViewModel : ViewModelBase
 
             // Load topics
             _logger.LogInformation("Loading topics...");
-            var topics = (await _managementService.GetTopicsAsync()).ToList();
+            //var topics = (await _managementService.GetTopicsAsync()).ToList();
+            List<ServiceBusTopic> topics = [];
             var topicsNode = new EntityTreeItemViewModel
             {
                 Name = "Topics",

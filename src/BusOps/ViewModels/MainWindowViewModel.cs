@@ -2,9 +2,11 @@ using ReactiveUI;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Collections.ObjectModel;
+using Avalonia.Controls;
 using BusOps.Core.Interfaces;
 using BusOps.Core.Models;
 using BusOps.Design;
+using BusOps.Services;
 using DynamicData;
 using Microsoft.Extensions.Logging;
 
@@ -15,7 +17,9 @@ public class MainWindowViewModel : ViewModelBase
     private readonly IServiceBusConnectionService _connectionService;
     private readonly IServiceBusManagementService _managementService;
     private readonly IServiceBusMessageService _messageService;
+    private readonly IErrorDialogService? _errorDialogService;
     private readonly ILogger<MainWindowViewModel>? _logger;
+    public Window? ParentWindow { get; set; }
 
     private bool _isConnected;
     private string _statusText = "Ready";
@@ -63,20 +67,7 @@ public class MainWindowViewModel : ViewModelBase
     }
     
     public bool HasSelectedMessage => SelectedMessage != null;
-
-    public bool? SelectAll
-    {
-        get => _selectAll;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _selectAll, value);
-            if (value.HasValue)
-            {
-                ToggleSelectAllMessages(value.Value);
-            }
-        }
-    }
-
+    
     public bool HasMessages => Messages.Count > 0;
     
     // public bool ShowNoSelectionMessage => !IsLoadingMessages && SelectedEntity == null;
@@ -101,7 +92,6 @@ public class MainWindowViewModel : ViewModelBase
     
     // This will be set by the view
     public Func<Task>? ShowAddConnectionDialog { get; set; }
-    public Func<string, Exception, Task>? ShowErrorDialog { get; set; }
 
     public EntitiesTreeViewModel EntitiesTreeViewModel { get; protected set; }
     public EntityTreeItemViewModel? SelectedEntity
@@ -121,6 +111,7 @@ public class MainWindowViewModel : ViewModelBase
         IServiceBusConnectionService connectionService,
         IServiceBusManagementService managementService,
         IServiceBusMessageService messageService,
+        IErrorDialogService? errorDialogService,
         ILogger<MainWindowViewModel>? logger,
         EntitiesTreeViewModel entitiesTreeViewModel,
         MessageManagementViewModel messageManagementViewModel)
@@ -128,6 +119,7 @@ public class MainWindowViewModel : ViewModelBase
         _connectionService = connectionService;
         _managementService = managementService;
         _messageService = messageService;
+        _errorDialogService = errorDialogService;
         _logger = logger;
         EntitiesTreeViewModel = entitiesTreeViewModel;
         MessageManagementViewModel = messageManagementViewModel;
@@ -189,6 +181,7 @@ public class MainWindowViewModel : ViewModelBase
         null!, 
         null!, 
         null!, 
+        null!,
         null!, 
         new EntitiesTreeViewModel(),
         new MessageManagementViewModel(null, null))
@@ -257,158 +250,7 @@ public class MainWindowViewModel : ViewModelBase
             _logger?.LogError(ex, "Exception while connecting to Service Bus");
             
             // Show error dialog with exception details
-            if (ShowErrorDialog != null)
-            {
-                await ShowErrorDialog("Connection Error", ex);
-            }
-        }
-
-        
-    }
-
-    // private async Task LoadMessagesForSelectedEntityAsync()
-    // {
-    //     _logger.LogInformation("LoadMessagesForSelectedEntityAsync called. SelectedEntity: {EntityName}, Type: {EntityType}", 
-    //         SelectedEntity?.Name ?? "null", SelectedEntity?.Type ?? "null");
-    //         
-    //     if (SelectedEntity == null || string.IsNullOrEmpty(_currentConnectionString))
-    //     {
-    //         _logger.LogInformation("Clearing messages - SelectedEntity is null or no connection string");
-    //         Messages.Clear();
-    //         return;
-    //     }
-    //
-    //     // Only load messages for Queue or Subscription entities, not folders or topics
-    //     if (SelectedEntity.Type != "Queue" && SelectedEntity.Type != "Subscription")
-    //     {
-    //         _logger.LogInformation("Clearing messages - Selected entity type is {Type}, not a Queue or Subscription", SelectedEntity.Type);
-    //         Messages.Clear();
-    //         return;
-    //     }
-    //
-    //     try
-    //     {
-    //         IsLoadingMessages = true;
-    //         StatusText = $"Loading messages from {SelectedEntity.Name}...";
-    //         Messages.Clear();
-    //         
-    //         _logger.LogInformation("Messages collection cleared. About to fetch messages...");
-    //
-    //         IEnumerable<ServiceBusMessage> messages;
-    //
-    //         if (SelectedEntity.Type == "Queue")
-    //         {
-    //             _logger.LogInformation("Peeking {MaxMessages} messages from queue {QueueName}", 
-    //                 MaxMessagesToShow, SelectedEntity.Name);
-    //             messages = await _messageService.ReceiveMessagesAsync(
-    //                 SelectedEntity.Name, 
-    //                 MaxMessagesToShow, 
-    //                 peekOnly: true);
-    //         }
-    //         else // Subscription
-    //         {
-    //             // Find the parent topic name
-    //             var topicName = FindParentTopicName(SelectedEntity);
-    //             if (string.IsNullOrEmpty(topicName))
-    //             {
-    //                 _logger.LogWarning("Could not find parent topic for subscription {SubscriptionName}", 
-    //                     SelectedEntity.Name);
-    //                 StatusText = "Error: Could not find parent topic";
-    //                 return;
-    //             }
-    //
-    //             _logger.LogInformation("Peeking {MaxMessages} messages from subscription {TopicName}/{SubscriptionName}", 
-    //                 MaxMessagesToShow, topicName, SelectedEntity.Name);
-    //             messages = await _messageService.ReceiveSubscriptionMessagesAsync(
-    //                 topicName, 
-    //                 SelectedEntity.Name, 
-    //                 MaxMessagesToShow, 
-    //                 peekOnly: true);
-    //         }
-    //
-    //         var messagesList = messages.ToList();
-    //         _logger.LogInformation("Received {Count} messages from service", messagesList.Count);
-    //         
-    //         foreach (var message in messagesList)
-    //         {
-    //             _logger.LogDebug("Adding message: ID={MessageId}, Seq={SequenceNumber}", 
-    //                 message.MessageId, message.SequenceNumber);
-    //             Messages.Add(message);
-    //         }
-    //         
-    //         _logger.LogInformation("Messages collection now has {Count} items. HasMessages={HasMessages}", 
-    //             Messages.Count, HasMessages);
-    //
-    //         StatusText = $"Loaded {Messages.Count} messages";
-    //         _logger.LogInformation("Successfully loaded {Count} messages", Messages.Count);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         StatusText = "Error loading messages";
-    //         _logger.LogError(ex, "Failed to load messages for {EntityType} {EntityName}", 
-    //             SelectedEntity.Type, SelectedEntity.Name);
-    //         
-    //         if (ShowErrorDialog != null)
-    //         {
-    //             await ShowErrorDialog("Failed to Load Messages", ex);
-    //         }
-    //     }
-    //     finally
-    //     {
-    //         IsLoadingMessages = false;
-    //         _logger.LogInformation("IsLoadingMessages set to false. Final state - Messages.Count: {Count}, HasMessages: {HasMessages}, ShowNoMessagesForEntity: {ShowNoMessages}", 
-    //             Messages.Count, HasMessages, ShowNoMessagesForEntity);
-    //     }
-    // }
-    //
-    // private string? FindParentTopicName(EntityTreeItemViewModel subscriptionEntity)
-    // {
-    //     // Find the Topics folder in the Entities tree
-    //     var topicsFolder = Entities.FirstOrDefault(e => e.Type == "Folder" && e.Name == "Topics");
-    //     if (topicsFolder == null)
-    //         return null;
-    //
-    //     // Search through all topics to find the one containing this subscription
-    //     foreach (var topic in topicsFolder.Children)
-    //     {
-    //         if (topic.Children.Any(sub => sub.Name == subscriptionEntity.Name))
-    //         {
-    //             return topic.Name;
-    //         }
-    //     }
-    //
-    //     return null;
-    // }
-
-    private void ToggleSelectAllMessages(bool selectAll)
-    {
-        _logger?.LogInformation("ToggleSelectAllMessages called with selectAll={SelectAll}", selectAll);
-
-        if (selectAll)
-        {
-            // Clear existing selections if any
-            foreach (var message in Messages)
-            {
-                message.IsSelected = false;
-            }
-
-            // Select all messages
-            foreach (var message in Messages)
-            {
-                message.IsSelected = true;
-            }
-
-            _logger?.LogInformation("All messages selected. Messages.Count={Count}", Messages.Count);
-        }
-        else
-        {
-            // Deselect all messages
-            foreach (var message in Messages)
-            {
-                message.IsSelected = false;
-            }
-
-            _logger?.LogInformation("All messages deselected.");
+            _errorDialogService?.ShowErrorDialog("Connection Error", ex, ParentWindow);
         }
     }
 }

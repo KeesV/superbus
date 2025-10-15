@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Serilog;
 using BusOps.Core.Interfaces;
 using BusOps.Azure.Services;
+using BusOps.Services;
 
 namespace BusOps;
 
@@ -58,6 +59,7 @@ public partial class App : Application
         services.AddSingleton<IServiceBusConnectionService, AzureServiceBusConnectionService>();
         services.AddSingleton<IServiceBusManagementService, AzureServiceBusManagementService>();
         services.AddSingleton<IServiceBusMessageService, AzureServiceBusMessageService>();
+        services.AddSingleton<IErrorDialogService, ErrorDialogService>();
 
         // Views and ViewModels
         services.AddSingleton<MainWindow>();

@@ -12,6 +12,14 @@
         WindowStartupLocation="CenterOwner"
         CanResize="True">
     
+    <Window.Background>
+        <DynamicResource ResourceKey="PrimaryBackgroundBrush"/>
+    </Window.Background>
+    
+    <Design.DataContext>
+        <vm:ErrorDialogViewModel />
+    </Design.DataContext>
+    
     <Grid RowDefinitions="Auto,*,Auto" Margin="20">
         <!-- Title -->
         <TextBlock Grid.Row="0" 
@@ -27,7 +35,9 @@
                      TextWrapping="Wrap"
                      AcceptsReturn="True"
                      BorderThickness="1"
-                     Padding="10"/>
+                     Padding="10"
+                     CornerRadius="{DynamicResource ControlCornerRadius}"
+                     />
         </ScrollViewer>
         
         <!-- Buttons -->

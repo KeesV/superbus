@@ -32,6 +32,10 @@ public partial class ErrorDialog : Window
         }
     }
 
+    public ErrorDialog() : this(new ErrorDialogViewModel())
+    {
+    }
+
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);

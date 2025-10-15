@@ -2,17 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:models="clr-namespace:BusOps.Core.Models;assembly=BusOps.Core"
-             xmlns:design="clr-namespace:BusOps.Design"
              xmlns:controls="clr-namespace:BusOps.Controls"
              xmlns:avaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="350"
-             x:Class="BusOps.Controls.ServiceBusMessageDetails"
-             x:DataType="models:ServiceBusMessage">
-    
-    <Design.DataContext>
-        <design:DesignServiceBusMessage />
-    </Design.DataContext>
+             x:Name="Root"
+             x:Class="BusOps.Views.ServiceBusMessageView">
     
     <TabControl>
         <TabControl.Styles>
@@ -24,8 +18,8 @@
         
         <TabItem Header="Properties">
             <Grid ColumnDefinitions="1*,1*" ColumnSpacing="10">
-                <controls:ServiceBusMessagePropertyList Grid.Column="0" Title="Broker Properties" Properties="{Binding BrokerProperties}" />
-                <controls:ServiceBusMessagePropertyList Grid.Column="1" Title="Custom Properties" Properties="{Binding CustomProperties}" />
+                <controls:ServiceBusMessagePropertyList Grid.Column="0" Title="Broker Properties" Properties="{Binding Message.BrokerProperties, ElementName=Root}" />
+                <controls:ServiceBusMessagePropertyList Grid.Column="1" Title="Custom Properties" Properties="{Binding Message.CustomProperties, ElementName=Root}" />
             </Grid>
         </TabItem>
         <TabItem Header="Body">

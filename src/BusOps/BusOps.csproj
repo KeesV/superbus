@@ -40,6 +40,10 @@
       <DependentUpon>EntitiesTreeView.axaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="Views\ServiceBusMessageView.axaml.cs">
+      <DependentUpon>ServiceBusMessageView.axaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

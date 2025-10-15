@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:BusOps.ViewModels"
              xmlns:avalonia="clr-namespace:LoadingIndicators.Avalonia;assembly=LoadingIndicators.Avalonia"
              xmlns:controls="clr-namespace:BusOps.Controls"
+             xmlns:views="clr-namespace:BusOps.Views"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
              x:Class="BusOps.Views.MessageManagementView"
              x:DataType="vm:MessageManagementViewModel">
@@ -83,6 +84,10 @@
                 Padding="5"
                 Margin="5,0,5,5"
                 CornerRadius="{DynamicResource PanelCornerRadius}">
+            
+            <Border IsVisible="{Binding SelectedMessage, Converter={x:Static ObjectConverters.IsNotNull}}">
+                 <views:ServiceBusMessageView Message="{Binding SelectedMessage }" />
+             </Border>
         </Border>
         
         

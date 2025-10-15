@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using BusOps.ViewModels;
@@ -20,13 +21,15 @@ public partial class MainWindow : Window
         _serviceProvider = serviceProvider;
         DataContext = viewModel;
         
+        viewModel.ParentWindow = this;
+        
         // Set the dialog opening delegate
         viewModel.ShowAddConnectionDialog = ShowAddConnectionDialog;
-        viewModel.ShowErrorDialog = ShowErrorDialog;
     }
 
     private void InitializeComponent()
     {
+        this.AttachDevTools();
         AvaloniaXamlLoader.Load(this);
     }
 
@@ -42,12 +45,5 @@ public partial class MainWindow : Window
             // Connection was added successfully
             // TODO: Refresh the connections list
         }
-    }
-
-    private async Task ShowErrorDialog(string title, Exception exception)
-    {
-        var dialogViewModel = ErrorDialogViewModel.FromException(title, exception);
-        var dialog = new ErrorDialog(dialogViewModel);
-        await dialog.ShowDialog(this);
     }
 }

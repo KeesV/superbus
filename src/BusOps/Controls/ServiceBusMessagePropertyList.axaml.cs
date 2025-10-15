@@ -1,33 +1,43 @@
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Controls;
-using AvaloniaEdit.TextMate;
+using Avalonia.Data;
 using BusOps.Core.Models;
-using TextMateSharp.Grammars;
 
 namespace BusOps.Controls;
 
 public partial class ServiceBusMessagePropertyList : UserControl
 {
-    public static readonly StyledProperty<string> TitleProperty = 
-        AvaloniaProperty.Register<ServiceBusMessagePropertyList, string>(nameof(Title), "Broker Properties");
+    public static readonly DirectProperty<ServiceBusMessagePropertyList, string> TitleProperty =
+        AvaloniaProperty.RegisterDirect<ServiceBusMessagePropertyList, string>(
+            nameof(Title),
+            o => o.Title,
+            (o, v) => o.Title = v,
+            defaultBindingMode: BindingMode.OneWay);
     
-    public static readonly StyledProperty<List<ServiceBusMessageProperty>> PropertiesProperty = 
-        AvaloniaProperty.Register<ServiceBusMessagePropertyList, List<ServiceBusMessageProperty>>(nameof(Properties), new List<ServiceBusMessageProperty>());
+    public static readonly DirectProperty<ServiceBusMessagePropertyList, IEnumerable<ServiceBusMessageProperty>> PropertiesProperty = 
+        AvaloniaProperty.RegisterDirect<ServiceBusMessagePropertyList, IEnumerable<ServiceBusMessageProperty>>(
+            nameof(Properties), 
+            o => o.Properties,
+            (o, v) => o.Properties = v,
+            defaultBindingMode: BindingMode.OneWay);
     
     public ServiceBusMessagePropertyList()
     {
         InitializeComponent();
     }
 
+    private string _title = string.Empty;
     public string Title
     {
-        get => GetValue(TitleProperty);
-        set => SetValue(TitleProperty, value);
+        get => _title;
+        set => SetAndRaise(TitleProperty, ref _title, value);
     }
-    
-    public List<ServiceBusMessageProperty> Properties
+
+    private IEnumerable<ServiceBusMessageProperty> _properties = new AvaloniaList<ServiceBusMessageProperty>();
+    public IEnumerable<ServiceBusMessageProperty> Properties
     {
-        get => GetValue(PropertiesProperty);
-        set => SetValue(PropertiesProperty, value);
+        get => _properties;
+        set => SetAndRaise(PropertiesProperty, ref _properties, value);
     }
 }
