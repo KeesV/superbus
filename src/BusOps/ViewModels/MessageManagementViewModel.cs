@@ -3,6 +3,7 @@ using System.Reactive;
 using BusOps.Core.Interfaces;
 using BusOps.Core.Models;
 using BusOps.Design;
+using DynamicData;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
@@ -10,8 +11,6 @@ namespace BusOps.ViewModels;
 
 public class MessageManagementViewModel : ViewModelBase
 {
-    private const int MaxMessagesToShow = 100;
-
     private readonly IServiceBusMessageService _messageService;
     private readonly ILogger<MessageManagementViewModel>? _logger;
     private EntityTreeItemViewModel? _selectedEntity;
@@ -30,6 +29,14 @@ public class MessageManagementViewModel : ViewModelBase
     
     public bool SelectedEntityIsManageable =>
         SelectedEntity is { Type: "Queue" or "Topic" };
+
+    public List<int> MaxMessagesToShowOptions { get; } = [25, 50, 100, 200, 500, 1000];
+    private int _maxMessagesToShow = 100;
+    public int MaxMessagesToShow
+    {
+        get => _maxMessagesToShow;
+        set => this.RaiseAndSetIfChanged(ref _maxMessagesToShow, value);
+    }
 
     public ObservableCollection<ServiceBusMessage> Messages { get; } = new();
     public bool HasMessages => Messages.Count > 0;
@@ -71,14 +78,23 @@ public class MessageManagementViewModel : ViewModelBase
         
         var canLoadMessages = this.WhenAnyValue(x => x.SelectedEntityIsManageable);
         _loadMessagesCommand = ReactiveCommand.CreateFromTask(LoadMessagesAsync, canLoadMessages);
+        
+        this.WhenAnyValue(x => x.MaxMessagesToShow)
+            .Subscribe(_ =>
+            {
+                _logger?.LogDebug("MaxMessagesToShow changed to {MaxMessagesToShow}", MaxMessagesToShow);
+                _loadMessagesCommand?.Execute().Subscribe();
+            });
     }
 
     public MessageManagementViewModel() : this(null, null)
     {
         if(!Avalonia.Controls.Design.IsDesignMode)
             throw new NotSupportedException("This constructor is only for design time.");
-
+        
         SelectedEntity = DesignData.SampleEntities.First().Children.First();
+        Messages.AddRange(SampleMessages.GenerateSampleMessages());
+        SelectedMessage = Messages.First();
     }
 
     private async Task LoadMessagesAsync()

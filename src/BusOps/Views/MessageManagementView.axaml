@@ -21,19 +21,36 @@
                 Margin="5,10,5,0"
                 CornerRadius="{DynamicResource PanelCornerRadius}">
             
-            <Grid>
+            <Grid RowDefinitions="Auto,*">
                     <!-- No Selection Message - show when SelectedEntity is null -->
-                    <TextBlock Text="Select a queue or subscription from the tree to view messages"
+                    <TextBlock Grid.Row="0" Text="Select a queue or subscription from the tree to view messages"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                TextWrapping="Wrap"
                                Margin="20"
                                IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNull}}"
+                               Grid.RowSpan="2"
                                />
                     
+                    <Grid Grid.Row="0" 
+                          ColumnDefinitions="Auto, *" 
+                          Margin="0,5,0,5"
+                          IsVisible="{Binding SelectedEntity, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <TextBlock Grid.Column="0" 
+                                   Text="{Binding SelectedEntity.Name}" 
+                                   FontSize="18"
+                                   />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ComboBox ItemsSource="{Binding MaxMessagesToShowOptions}"
+                                      SelectedItem="{Binding MaxMessagesToShow}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,5,0" />
+                        </StackPanel>
+                    </Grid>
+                    
                     <!-- Non-Queue/Subscription Entity Message - show when entity is selected but not a queue or subscription -->
-                    <TextBlock Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
+                    <TextBlock Grid.Row="1" Text="Select a queue or subscription to view messages (folders and topics don't have messages)"
                                Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -48,7 +65,7 @@
                     </TextBlock>
                     
                     <!-- Loading Indicator - show when loading messages -->
-                    <Grid Width="400" Height="100" IsVisible="{Binding IsLoadingMessages}">
+                    <Grid Grid.Row="1" Width="400" Height="100" IsVisible="{Binding IsLoadingMessages}">
                         <Border 
                             Background="{DynamicResource PrimaryBackgroundPanelBrush}"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
@@ -63,6 +80,7 @@
                     </Grid>
                     
                     <controls:ServiceBusMessagesGrid 
+                        Grid.Row="1"
                         IsVisible="{Binding HasMessages}" 
                         Messages="{Binding Messages}" 
                         SelectedMessage="{Binding SelectedMessage}" />
