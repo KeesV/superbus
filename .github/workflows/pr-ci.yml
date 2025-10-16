@@ -1,0 +1,108 @@
+name: PR CI - Build and Test
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore BusOps.sln
+    
+    - name: Build solution
+      run: dotnet build BusOps.sln --configuration Release --no-restore
+    
+    - name: Run unit tests
+      run: dotnet test tests/BusOps.Tests/BusOps.Tests.csproj --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+    
+    - name: Run integration tests
+      run: dotnet test tests/BusOps.IntegrationTests/BusOps.IntegrationTests.csproj --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=integration-test-results.trx"
+      continue-on-error: true
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.os }}
+        path: |
+          **/TestResults/**/*.trx
+          **/TestResults/**/*.xml
+    
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: matrix.os == 'ubuntu-latest'
+      with:
+        name: coverage-reports
+        path: |
+          **/TestResults/**/coverage.cobertura.xml
+    
+    - name: Publish Test Results (Linux)
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: (!cancelled()) && matrix.os == 'ubuntu-latest'
+      with:
+        files: |
+          **/TestResults/**/*.trx
+        check_name: Test Results (${{ matrix.os }})
+    
+    - name: Publish Test Results (macOS)
+      uses: EnricoMi/publish-unit-test-result-action/macos@v2
+      if: (!cancelled()) && matrix.os == 'macos-latest'
+      with:
+        files: |
+          **/TestResults/**/*.trx
+        check_name: Test Results (${{ matrix.os }})
+    
+    - name: Publish Test Results (Windows)
+      uses: EnricoMi/publish-unit-test-result-action/windows@v2
+      if: (!cancelled()) && matrix.os == 'windows-latest'
+      with:
+        files: |
+          **/TestResults/**/*.trx
+        check_name: Test Results (${{ matrix.os }})
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore BusOps.sln
+    
+    - name: Check formatting
+      run: dotnet format BusOps.sln --verify-no-changes --verbosity diagnostic
+      continue-on-error: true
