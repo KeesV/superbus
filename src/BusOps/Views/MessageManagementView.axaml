@@ -41,7 +41,13 @@
                                    Text="{Binding SelectedEntity.Name}" 
                                    FontSize="18"
                                    />
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
+                            <Button>
+                                <PathIcon Data="{DynamicResource DeleteMessage}" />
+                            </Button>
+                            <Button>
+                                <PathIcon Data="{DynamicResource MoveMessage}" />
+                            </Button>
                             <ComboBox ItemsSource="{Binding MaxMessagesToShowOptions}"
                                       SelectedItem="{Binding MaxMessagesToShow}"
                                       VerticalAlignment="Center"
