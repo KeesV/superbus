@@ -132,8 +132,8 @@ jobs:
         
         # Copy Info.plist and update version information
         cp "$INFO_PLIST" "$APP_NAME/Contents/Info.plist"
-        sed -i '' 's|<key>CFBundleVersion</key>[[:space:]]*<string>.*</string>|<key>CFBundleVersion</key><string>${{ needs.version.outputs.version }}</string>|' "$APP_NAME/Contents/Info.plist"
-        sed -i '' 's|<key>CFBundleShortVersionString</key>[[:space:]]*<string>.*</string>|<key>CFBundleShortVersionString</key><string>${{ needs.version.outputs.version }}</string>|' "$APP_NAME/Contents/Info.plist"
+        plutil -replace CFBundleVersion -string "${{ needs.version.outputs.version }}" "$APP_NAME/Contents/Info.plist"
+        plutil -replace CFBundleShortVersionString -string "${{ needs.version.outputs.version }}" "$APP_NAME/Contents/Info.plist"
         
         # Copy all published files to MacOS directory
         find "$PUBLISH_OUTPUT_DIRECTORY" -mindepth 1 -maxdepth 1 -exec cp -R {} "$APP_NAME/Contents/MacOS/" \;
