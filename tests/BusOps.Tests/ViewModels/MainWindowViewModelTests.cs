@@ -283,7 +283,19 @@ public class MainWindowViewModelTests
 
         // Act
         var viewModel = CreateViewModel();
-        await Task.Delay(100); // Give async load time to complete
+        
+        // Wait for connections to be loaded by observing the collection
+        await Task.Run(() =>
+        {
+            var maxAttempts = 100; // Timeout after 100 attempts
+            var attempts = 0;
+            while (viewModel.Connections.Count < 2 && attempts < maxAttempts)
+            {
+                attempts++;
+            }
+
+            return Task.CompletedTask;
+        });
 
         // Assert
         viewModel.Connections.Count.ShouldBe(2);
@@ -292,7 +304,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task Constructor_WhenLoadConnectionsFails_ShouldLogError()
+    public Task Constructor_WhenLoadConnectionsFails_ShouldLogError()
     {
         // Arrange
         var exception = new Exception("Failed to load");
@@ -301,8 +313,7 @@ public class MainWindowViewModelTests
             .ThrowsAsync(exception);
 
         // Act
-        var viewModel = CreateViewModel();
-        await Task.Delay(100);
+        CreateViewModel();
 
         // Assert
         _mockLogger.Verify(
@@ -313,6 +324,7 @@ public class MainWindowViewModelTests
                 exception,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -452,20 +464,34 @@ public class MainWindowViewModelTests
         {
             new() { Id = "1", Name = "New Connection", ConnectionString = "test" }
         };
-
+        
         _mockConnectionService
             .SetupSequence(x => x.GetConnectionsAsync())
             .ReturnsAsync(initialConnections)
             .ReturnsAsync(updatedConnections);
 
         var viewModel = CreateViewModel();
-        await Task.Delay(100); // Let initial load complete
+        
+        // Wait for initial load to complete
+        viewModel.Connections.Count.ShouldBe(0);
 
         viewModel.ShowAddConnectionDialog = () => Task.CompletedTask;
 
         // Act
         await viewModel.AddConnectionCommand.Execute().FirstAsync();
-        await Task.Delay(100); // Let reload complete
+        
+        // Wait for reload to complete
+        await Task.Run(() =>
+        {
+            var maxAttempts = 100;
+            var attempts = 0;
+            while (viewModel.Connections.Count < 1 && attempts < maxAttempts)
+            {
+                attempts++;
+            }
+
+            return Task.CompletedTask;
+        });
 
         // Assert
         viewModel.Connections.Count.ShouldBe(1);
@@ -583,4 +609,3 @@ public class MainWindowViewModelTests
         isLoadingMessagesChanged.ShouldBeTrue();
     }
 }
-

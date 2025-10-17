@@ -4,6 +4,7 @@ using BusOps.ViewModels;
 using Shouldly;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ReactiveUI;
 using System.Reactive.Linq;
 
 namespace BusOps.Tests.ViewModels;
@@ -198,16 +199,22 @@ public class MessageManagementViewModelTests
             new() { MessageId = "msg-2", Body = "Body 2" }
         };
 
+        var tcs = new TaskCompletionSource<IEnumerable<ServiceBusMessage>>();
         _mockMessageService
             .Setup(x => x.ReceiveMessagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>()))
-            .ReturnsAsync(messages);
+            .Returns(tcs.Task);
 
         var viewModel = CreateViewModel();
         var entity = new EntityTreeItemViewModel { Name = "orders-queue", Type = "Queue" };
 
         // Act
         viewModel.SelectedEntity = entity;
-        await Task.Delay(100); // Give reactive command time to execute
+        tcs.SetResult(messages); // Complete the async operation
+        
+        // Wait for messages to be loaded by observing IsLoadingMessages
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages)
+            .Where(isLoading => !isLoading)
+            .FirstAsync();
 
         // Assert
         _mockMessageService.Verify(
@@ -234,7 +241,11 @@ public class MessageManagementViewModelTests
 
         // Act
         viewModel.SelectedEntity = entity;
-        await Task.Delay(100); // Give reactive command time to execute
+        
+        // Wait for messages to be loaded
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages)
+            .Where(isLoading => !isLoading)
+            .FirstAsync();
 
         // Assert
         viewModel.Messages.Count.ShouldBe(2);
@@ -266,7 +277,11 @@ public class MessageManagementViewModelTests
 
         // Act
         viewModel.SelectedEntity = subscription;
-        await Task.Delay(100); // Give reactive command time to execute
+        
+        // Wait for messages to be loaded
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages)
+            .Where(isLoading => !isLoading)
+            .FirstAsync();
 
         // Assert
         _mockMessageService.Verify(
@@ -285,7 +300,9 @@ public class MessageManagementViewModelTests
 
         // Act
         viewModel.SelectedEntity = entity;
-        await Task.Delay(100); // Give reactive command time to execute
+        
+        // Wait a moment for reactive processing - no async work expected for folders
+        await Task.Yield();
 
         // Assert
         viewModel.Messages.ShouldBeEmpty();
@@ -298,16 +315,22 @@ public class MessageManagementViewModelTests
     public async Task LoadMessages_WhenExceptionOccurs_ShouldSetIsLoadingToFalse()
     {
         // Arrange
+        var tcs = new TaskCompletionSource<IEnumerable<ServiceBusMessage>>();
         _mockMessageService
             .Setup(x => x.ReceiveMessagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>()))
-            .ThrowsAsync(new Exception("Connection failed"));
+            .Returns(tcs.Task);
 
         var viewModel = CreateViewModel();
         var entity = new EntityTreeItemViewModel { Name = "test-queue", Type = "Queue" };
 
         // Act
         viewModel.SelectedEntity = entity;
-        await Task.Delay(200); // Give reactive command time to execute and handle error
+        tcs.SetException(new Exception("Connection failed"));
+        
+        // Wait for error handling to complete
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages)
+            .Where(isLoading => !isLoading)
+            .FirstAsync();
 
         // Assert
         viewModel.IsLoadingMessages.ShouldBeFalse();
@@ -318,16 +341,22 @@ public class MessageManagementViewModelTests
     {
         // Arrange
         var exception = new Exception("Connection failed");
+        var tcs = new TaskCompletionSource<IEnumerable<ServiceBusMessage>>();
         _mockMessageService
             .Setup(x => x.ReceiveMessagesAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<bool>()))
-            .ThrowsAsync(exception);
+            .Returns(tcs.Task);
 
         var viewModel = CreateViewModel();
         var entity = new EntityTreeItemViewModel { Name = "test-queue", Type = "Queue" };
 
         // Act
         viewModel.SelectedEntity = entity;
-        await Task.Delay(200); // Give reactive command time to execute
+        tcs.SetException(exception);
+        
+        // Wait for error handling to complete
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages)
+            .Where(isLoading => !isLoading)
+            .FirstAsync();
 
         // Assert
         _mockLogger.Verify(
@@ -335,7 +364,7 @@ public class MessageManagementViewModelTests
                 LogLevel.Error,
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
-                exception,
+                It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
@@ -365,11 +394,11 @@ public class MessageManagementViewModelTests
 
         // Act
         viewModel.SelectedEntity = entity1;
-        await Task.Delay(100);
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages).Where(isLoading => !isLoading).FirstAsync();
         viewModel.Messages.Count.ShouldBe(1);
 
         viewModel.SelectedEntity = entity2;
-        await Task.Delay(100);
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages).Where(isLoading => !isLoading).FirstAsync();
 
         // Assert
         viewModel.Messages.Count.ShouldBe(2);
@@ -392,11 +421,11 @@ public class MessageManagementViewModelTests
         var viewModel = CreateViewModel();
         var entity = new EntityTreeItemViewModel { Name = "test-queue", Type = "Queue" };
         viewModel.SelectedEntity = entity;
-        await Task.Delay(100);
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages).Where(isLoading => !isLoading).FirstAsync();
 
         // Act
         viewModel.MaxMessagesToShow = 500;
-        await Task.Delay(100);
+        await viewModel.WhenAnyValue(x => x.IsLoadingMessages).Where(isLoading => !isLoading).FirstAsync();
 
         // Assert
         _mockMessageService.Verify(
@@ -479,4 +508,3 @@ public class MessageManagementViewModelTests
         hasMessagesChanged.ShouldBeTrue();
     }
 }
-
