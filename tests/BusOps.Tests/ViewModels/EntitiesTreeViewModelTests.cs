@@ -4,6 +4,7 @@ using BusOps.ViewModels;
 using Shouldly;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ReactiveUI;
 using System.Reactive.Linq;
 
 namespace BusOps.Tests.ViewModels;
@@ -331,17 +332,23 @@ public class EntitiesTreeViewModelTests
         var viewModel = CreateViewModel();
 
         // Act
-        var executeTask = viewModel.LoadEntitiesCommand.Execute().FirstAsync();
+        var executeTask = viewModel.LoadEntitiesCommand.Execute();
 
-        // Give it a moment to start
-        await Task.Delay(50);
+        // Wait for IsLoadingEntities to become true
+        await viewModel.WhenAnyValue(x => x.IsLoadingEntities)
+            .Where(isLoading => isLoading)
+            .FirstAsync();
 
         // Assert - should be loading
         viewModel.IsLoadingEntities.ShouldBeTrue();
 
         // Complete the task
         taskCompletionSource.SetResult(new List<ServiceBusQueue>());
-        await executeTask;
+        
+        // Wait for completion
+        await viewModel.WhenAnyValue(x => x.IsLoadingEntities)
+            .Where(isLoading => !isLoading)
+            .FirstAsync();
 
         // Assert - should be done loading
         viewModel.IsLoadingEntities.ShouldBeFalse();

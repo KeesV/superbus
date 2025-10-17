@@ -310,7 +310,7 @@ public class AddConnectionDialogViewModelTests
     }
 
     [Fact]
-    public void AddCommand_WhenConnectionNameEmptyAndNamespaceSelected_ShouldBeEnabled()
+    public async Task AddCommand_WhenConnectionNameEmptyAndNamespaceSelected_ShouldBeEnabled()
     {
         // Arrange
         var viewModel = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: false);
@@ -322,25 +322,24 @@ public class AddConnectionDialogViewModelTests
             FullyQualifiedNamespace = "test-namespace.servicebus.windows.net" 
         };
 
-        // Assert - command should be enabled because ConnectionName is now set
-        Thread.Sleep(100); // Small delay for reactive updates
-        var canExecute = viewModel.AddCommand.CanExecute.FirstAsync().Wait();
+        // Assert - Wait for the observable to emit and test the value
+        var canExecute = await viewModel.AddCommand.CanExecute.FirstAsync();
         canExecute.ShouldBeTrue();
     }
 
     [Fact]
-    public void AddCommand_WhenNoNamespaceAndNoConnectionName_ShouldBeDisabled()
+    public async Task AddCommand_WhenNoNamespaceAndNoConnectionName_ShouldBeDisabled()
     {
         // Arrange
         var viewModel = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: false);
 
-        // Act & Assert - with no namespace and no connection name, command should be disabled
-        var canExecute = viewModel.AddCommand.CanExecute.FirstAsync().Wait();
+        // Act & Assert - Wait for the observable to emit
+        var canExecute = await viewModel.AddCommand.CanExecute.FirstAsync();
         canExecute.ShouldBeFalse();
     }
 
     [Fact]
-    public void AddCommand_WhenConnectionNameSetAndNamespaceSelected_ShouldBeEnabled()
+    public async Task AddCommand_WhenConnectionNameSetAndNamespaceSelected_ShouldBeEnabled()
     {
         // Arrange
         var viewModel = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: false);
@@ -351,14 +350,13 @@ public class AddConnectionDialogViewModelTests
         };
         viewModel.ConnectionName = "Test Connection";
 
-        // Act & Assert - give ReactiveUI time to update
-        Thread.Sleep(100); // Small delay for reactive updates
-        var canExecute = viewModel.AddCommand.CanExecute.FirstAsync().Wait();
+        // Act & Assert - Wait for the observable to emit
+        var canExecute = await viewModel.AddCommand.CanExecute.FirstAsync();
         canExecute.ShouldBeTrue();
     }
 
     [Fact]
-    public void AddCommand_WhenUsingCustomConnectionStringWithValidData_ShouldBeEnabled()
+    public async Task AddCommand_WhenUsingCustomConnectionStringWithValidData_ShouldBeEnabled()
     {
         // Arrange
         var viewModel = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: false);
@@ -366,22 +364,21 @@ public class AddConnectionDialogViewModelTests
         viewModel.CustomConnectionString = "Endpoint=sb://test.servicebus.windows.net/";
         viewModel.ConnectionName = "Test Connection";
 
-        // Act & Assert - give ReactiveUI time to update
-        Thread.Sleep(100); // Small delay for reactive updates
-        var canExecute = viewModel.AddCommand.CanExecute.FirstAsync().Wait();
+        // Act & Assert - Wait for the observable to emit
+        var canExecute = await viewModel.AddCommand.CanExecute.FirstAsync();
         canExecute.ShouldBeTrue();
     }
 
     [Fact]
-    public void AddCommand_WhenUsingCustomConnectionStringWithoutConnectionString_ShouldBeDisabled()
+    public async Task AddCommand_WhenUsingCustomConnectionStringWithoutConnectionString_ShouldBeDisabled()
     {
         // Arrange
         var viewModel = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: false);
         viewModel.UseCustomConnectionString = true;
         viewModel.ConnectionName = "Test Connection";
 
-        // Act & Assert
-        var canExecute = viewModel.AddCommand.CanExecute.FirstAsync().Wait();
+        // Act & Assert - Wait for the observable to emit
+        var canExecute = await viewModel.AddCommand.CanExecute.FirstAsync();
         canExecute.ShouldBeFalse();
     }
 
@@ -416,7 +413,7 @@ public class AddConnectionDialogViewModelTests
     }
 
     [Fact]
-    public void Constructor_WithStartDiscoveryTrue_ShouldStartDiscoveryAutomatically()
+    public async Task Constructor_WithStartDiscoveryTrue_ShouldStartDiscoveryAutomatically()
     {
         // Arrange
         var namespaces = new List<DiscoveredServiceBusNamespace>
@@ -424,18 +421,23 @@ public class AddConnectionDialogViewModelTests
             new() { Name = "namespace1", FullyQualifiedNamespace = "namespace1.servicebus.windows.net" }
         };
 
+        var tcs = new TaskCompletionSource<IEnumerable<DiscoveredServiceBusNamespace>>();
         _mockConnectionService
             .Setup(x => x.DiscoverNamespacesAsync())
-            .ReturnsAsync(namespaces);
+            .Returns(tcs.Task);
 
         // Act
-        _ = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: true);
+        var viewModel = new AddConnectionDialogViewModel(_mockConnectionService.Object, _mockLogger.Object, startDiscovery: true);
         
-        // Give the async operation time to complete
-        Thread.Sleep(500);
+        // Complete the async operation
+        tcs.SetResult(namespaces);
+        
+        // Wait for the command to complete by observing it
+        await viewModel.DiscoverNamespacesCommand.IsExecuting.Where(isExecuting => !isExecuting).FirstAsync();
 
         // Assert
-        _mockConnectionService.Verify(x => x.DiscoverNamespacesAsync(), Times.AtLeastOnce);
+        _mockConnectionService.Verify(x => x.DiscoverNamespacesAsync(), Times.Once);
+        viewModel.DiscoveredNamespaces.Count.ShouldBe(1);
     }
 
     [Fact]
