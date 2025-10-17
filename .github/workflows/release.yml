@@ -112,10 +112,35 @@ jobs:
           --output ./publish/${{ matrix.artifact }} \
           -p:PublishSingleFile=true \
           -p:IncludeNativeLibrariesForSelfExtract=true \
+          -p:UseAppHost=true \
           -p:Version=${{ needs.version.outputs.version }} \
           -p:AssemblyVersion=${{ needs.version.outputs.assembly_version }} \
           -p:FileVersion=${{ needs.version.outputs.assembly_version }} \
           -p:InformationalVersion=${{ needs.version.outputs.informational_version }}
+    
+    - name: Create macOS application bundle
+      if: startsWith(matrix.os, 'macos')
+      shell: bash
+      run: |
+        APP_NAME="BusOps.app"
+        PUBLISH_OUTPUT_DIRECTORY="./publish/${{ matrix.artifact }}"
+        INFO_PLIST="src/BusOps/Info.plist"
+        
+        # Create .app bundle structure
+        mkdir -p "$APP_NAME/Contents/MacOS"
+        mkdir -p "$APP_NAME/Contents/Resources"
+        
+        # Copy Info.plist with version information
+        sed "s/<string>1.0.0<\/string>/<string>${{ needs.version.outputs.version }}<\/string>/g" "$INFO_PLIST" > "$APP_NAME/Contents/Info.plist"
+        
+        # Copy all published files to MacOS directory
+        cp -R "$PUBLISH_OUTPUT_DIRECTORY/"* "$APP_NAME/Contents/MacOS/"
+        
+        # Make the executable actually executable
+        chmod +x "$APP_NAME/Contents/MacOS/BusOps"
+        
+        # Move the .app bundle to a versioned location for packaging
+        mv "$APP_NAME" "./publish/${{ matrix.artifact }}-${{ needs.version.outputs.version }}.app"
     
     - name: Create archive (Windows)
       if: startsWith(matrix.os, 'windows')
@@ -125,10 +150,17 @@ jobs:
         Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact }}-${{ needs.version.outputs.version }}.zip
     
     - name: Create archive (Unix)
-      if: ${{ !startsWith(matrix.os, 'windows') }}
+      if: startsWith(matrix.os, 'linux')
       run: |
         cd publish/${{ matrix.artifact }}
         tar -czf ../${{ matrix.artifact }}-${{ needs.version.outputs.version }}.tar.gz *
+    
+    - name: Create macOS archive
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        cd publish
+        # Create a zip file containing the .app bundle
+        zip -r ${{ matrix.artifact }}-${{ needs.version.outputs.version }}.zip ${{ matrix.artifact }}-${{ needs.version.outputs.version }}.app
     
     - name: Upload artifacts (Windows)
       if: startsWith(matrix.os, 'windows')
@@ -139,11 +171,19 @@ jobs:
         retention-days: 30
     
     - name: Upload artifacts (Unix)
-      if: ${{ !startsWith(matrix.os, 'windows') }}
+      if: startsWith(matrix.os, 'linux')
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact }}
         path: publish/${{ matrix.artifact }}-${{ needs.version.outputs.version }}.tar.gz
+        retention-days: 30
+    
+    - name: Upload artifacts (macOS)
+      if: startsWith(matrix.os, 'macos')
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: publish/${{ matrix.artifact }}-${{ needs.version.outputs.version }}.zip
         retention-days: 30
 
   release:
@@ -185,8 +225,8 @@ jobs:
         - **Windows ARM64**: \`busops-windows-arm64-${VERSION}.zip\`
         
         ### macOS
-        - **macOS Intel**: \`busops-macos-x64-${VERSION}.tar.gz\`
-        - **macOS Apple Silicon**: \`busops-macos-arm64-${VERSION}.tar.gz\`
+        - **macOS Intel**: \`busops-macos-x64-${VERSION}.zip\` (contains BusOps.app)
+        - **macOS Apple Silicon**: \`busops-macos-arm64-${VERSION}.zip\` (contains BusOps.app)
         
         ### Linux
         - **Linux x64**: \`busops-linux-x64-${VERSION}.tar.gz\`
@@ -199,10 +239,15 @@ jobs:
         3. Run \`BusOps.exe\`
         
         ### macOS
-        1. Download the appropriate TAR.GZ file for your architecture
-        2. Extract: \`tar -xzf busops-macos-*.tar.gz\`
-        3. Run: \`./BusOps\`
-        4. If you get a security warning, go to System Preferences > Security & Privacy and allow the app
+        1. Download the appropriate ZIP file for your architecture
+        2. Extract the archive (double-click the ZIP file)
+        3. Move BusOps.app to your Applications folder
+        4. Double-click BusOps.app to launch
+        5. If you get a security warning about an unidentified developer:
+           - Right-click (or Control-click) on BusOps.app
+           - Select "Open" from the menu
+           - Click "Open" in the dialog that appears
+           - Or go to System Preferences > Security & Privacy and click "Open Anyway"
         
         ### Linux
         1. Download the TAR.GZ file
