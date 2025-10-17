@@ -134,7 +134,7 @@ jobs:
         sed "s/<string>1.0.0<\/string>/<string>${{ needs.version.outputs.version }}<\/string>/g" "$INFO_PLIST" > "$APP_NAME/Contents/Info.plist"
         
         # Copy all published files to MacOS directory
-        cp -R "$PUBLISH_OUTPUT_DIRECTORY/"* "$APP_NAME/Contents/MacOS/"
+        find "$PUBLISH_OUTPUT_DIRECTORY" -mindepth 1 -maxdepth 1 -exec cp -R {} "$APP_NAME/Contents/MacOS/" \;
         
         # Make the executable actually executable
         chmod +x "$APP_NAME/Contents/MacOS/BusOps"
