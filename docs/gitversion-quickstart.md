@@ -70,7 +70,7 @@ To test versioning locally before pushing:
 dotnet tool install --global GitVersion.Tool
 
 # Run it in your project root
-cd /Users/kees/git/busops
+cd /path/to/busops
 dotnet-gitversion
 
 # You should see output like:
