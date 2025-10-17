@@ -29,7 +29,9 @@ public partial class MainWindow : Window
 
     private void InitializeComponent()
     {
+#if DEBUG
         this.AttachDevTools();
+#endif
         AvaloniaXamlLoader.Load(this);
     }
 
