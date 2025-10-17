@@ -15,14 +15,13 @@
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
     <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="FluentAssertions" Version="6.12.1" />
+    <PackageReference Include="Shouldly" Version="4.2.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\BusOps.Core\BusOps.Core.csproj" />
-    <ProjectReference Include="..\..\src\BusOps.Azure\BusOps.Azure.csproj" />
+    <ProjectReference Include="..\..\src\BusOps\BusOps.csproj" />
   </ItemGroup>
 
   <ItemGroup>
