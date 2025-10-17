@@ -104,6 +104,7 @@ jobs:
       continue-on-error: true
     
     - name: Publish application
+      shell: bash
       run: |
         dotnet publish src/BusOps/BusOps.csproj \
           --configuration Release \
