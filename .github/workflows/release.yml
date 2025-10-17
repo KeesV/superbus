@@ -131,7 +131,7 @@ jobs:
         mkdir -p "$APP_NAME/Contents/Resources"
         
         # Copy Info.plist with version information
-        sed "s/<string>1.0.0<\/string>/<string>${{ needs.version.outputs.version }}<\/string>/g" "$INFO_PLIST" > "$APP_NAME/Contents/Info.plist"
+        sed "/<key>CFBundleVersion<\/key>/!b;n;s/<string>.*<\/string>/<string>${{ needs.version.outputs.version }}<\/string>/" "$INFO_PLIST" > "$APP_NAME/Contents/Info.plist"
         
         # Copy all published files to MacOS directory
         find "$PUBLISH_OUTPUT_DIRECTORY" -mindepth 1 -maxdepth 1 -exec cp -R {} "$APP_NAME/Contents/MacOS/" \;
