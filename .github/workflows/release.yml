@@ -1,0 +1,239 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  version:
+    name: Determine Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.gitversion.outputs.semVer }}
+      full_version: ${{ steps.gitversion.outputs.fullSemVer }}
+      is_prerelease: ${{ steps.gitversion.outputs.preReleaseTag != '' }}
+      nuget_version: ${{ steps.gitversion.outputs.nuGetVersionV2 }}
+      assembly_version: ${{ steps.gitversion.outputs.assemblySemVer }}
+      informational_version: ${{ steps.gitversion.outputs.informationalVersion }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v1.1.1
+      with:
+        versionSpec: '5.x'
+    
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v1.1.1
+      with:
+        useConfigFile: true
+        configFilePath: GitVersion.yml
+    
+    - name: Display GitVersion outputs
+      run: |
+        echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+        echo "FullSemVer: ${{ steps.gitversion.outputs.fullSemVer }}"
+        echo "NuGetVersionV2: ${{ steps.gitversion.outputs.nuGetVersionV2 }}"
+        echo "AssemblySemVer: ${{ steps.gitversion.outputs.assemblySemVer }}"
+        echo "InformationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}"
+        echo "PreReleaseTag: ${{ steps.gitversion.outputs.preReleaseTag }}"
+        echo "Is Prerelease: ${{ steps.gitversion.outputs.preReleaseTag != '' }}"
+
+  build:
+    name: Build - ${{ matrix.os }}
+    needs: version
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: windows
+            runner: windows-latest
+            rid: win-x64
+            artifact: busops-windows-x64
+            extension: .exe
+          - os: windows-arm64
+            runner: windows-latest
+            rid: win-arm64
+            artifact: busops-windows-arm64
+            extension: .exe
+          - os: macos
+            runner: macos-latest
+            rid: osx-x64
+            artifact: busops-macos-x64
+            extension: ''
+          - os: macos-arm64
+            runner: macos-latest
+            rid: osx-arm64
+            artifact: busops-macos-arm64
+            extension: ''
+          - os: linux
+            runner: ubuntu-latest
+            rid: linux-x64
+            artifact: busops-linux-x64
+            extension: ''
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore BusOps.sln
+    
+    - name: Build solution
+      run: dotnet build BusOps.sln --configuration Release --no-restore
+    
+    - name: Run tests
+      run: dotnet test BusOps.sln --configuration Release --no-build --verbosity normal
+      continue-on-error: true
+    
+    - name: Publish application
+      run: |
+        dotnet publish src/BusOps/BusOps.csproj \
+          --configuration Release \
+          --runtime ${{ matrix.rid }} \
+          --self-contained true \
+          --output ./publish/${{ matrix.artifact }} \
+          -p:PublishSingleFile=true \
+          -p:IncludeNativeLibrariesForSelfExtract=true \
+          -p:Version=${{ needs.version.outputs.version }} \
+          -p:AssemblyVersion=${{ needs.version.outputs.assembly_version }} \
+          -p:FileVersion=${{ needs.version.outputs.assembly_version }} \
+          -p:InformationalVersion=${{ needs.version.outputs.informational_version }}
+    
+    - name: Create archive (Windows)
+      if: startsWith(matrix.os, 'windows')
+      shell: pwsh
+      run: |
+        cd publish/${{ matrix.artifact }}
+        Compress-Archive -Path * -DestinationPath ../${{ matrix.artifact }}-${{ needs.version.outputs.version }}.zip
+    
+    - name: Create archive (Unix)
+      if: ${{ !startsWith(matrix.os, 'windows') }}
+      run: |
+        cd publish/${{ matrix.artifact }}
+        tar -czf ../${{ matrix.artifact }}-${{ needs.version.outputs.version }}.tar.gz *
+    
+    - name: Upload artifacts (Windows)
+      if: startsWith(matrix.os, 'windows')
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: publish/${{ matrix.artifact }}-${{ needs.version.outputs.version }}.zip
+        retention-days: 30
+    
+    - name: Upload artifacts (Unix)
+      if: ${{ !startsWith(matrix.os, 'windows') }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: publish/${{ matrix.artifact }}-${{ needs.version.outputs.version }}.tar.gz
+        retention-days: 30
+
+  release:
+    name: Create Release
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-artifacts
+    
+    - name: Display structure
+      run: ls -R release-artifacts
+    
+    - name: Generate release notes
+      id: release_notes
+      run: |
+        VERSION="${{ needs.version.outputs.version }}"
+        BRANCH="${{ github.ref_name }}"
+        
+        cat > release_notes.md << EOF
+        # BusOps v${VERSION}
+        
+        ## Release Information
+        - **Branch**: ${BRANCH}
+        - **Commit**: ${{ github.sha }}
+        - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        
+        ## Downloads
+        Choose the appropriate package for your operating system:
+        
+        ### Windows
+        - **Windows x64**: \`busops-windows-x64-${VERSION}.zip\`
+        - **Windows ARM64**: \`busops-windows-arm64-${VERSION}.zip\`
+        
+        ### macOS
+        - **macOS Intel**: \`busops-macos-x64-${VERSION}.tar.gz\`
+        - **macOS Apple Silicon**: \`busops-macos-arm64-${VERSION}.tar.gz\`
+        
+        ### Linux
+        - **Linux x64**: \`busops-linux-x64-${VERSION}.tar.gz\`
+        
+        ## Installation
+        
+        ### Windows
+        1. Download the appropriate ZIP file for your architecture
+        2. Extract the archive
+        3. Run \`BusOps.exe\`
+        
+        ### macOS
+        1. Download the appropriate TAR.GZ file for your architecture
+        2. Extract: \`tar -xzf busops-macos-*.tar.gz\`
+        3. Run: \`./BusOps\`
+        4. If you get a security warning, go to System Preferences > Security & Privacy and allow the app
+        
+        ### Linux
+        1. Download the TAR.GZ file
+        2. Extract: \`tar -xzf busops-linux-x64-${VERSION}.tar.gz\`
+        3. Run: \`./BusOps\`
+        4. You may need to make it executable: \`chmod +x BusOps\`
+        
+        ## What's Changed
+        See the commit history for detailed changes.
+        EOF
+        
+        echo "Generated release notes"
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.version.outputs.version }}
+        name: BusOps v${{ needs.version.outputs.version }}
+        body_path: release_notes.md
+        draft: false
+        prerelease: ${{ needs.version.outputs.is_prerelease == 'true' }}
+        files: |
+          release-artifacts/**/*.zip
+          release-artifacts/**/*.tar.gz
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Update latest tag (main branch only)
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git tag -f latest
+        git push origin latest --force
