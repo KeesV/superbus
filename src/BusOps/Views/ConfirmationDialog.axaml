@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:BusOps.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="200"
+        x:Class="BusOps.Views.ConfirmationDialog"
+        x:DataType="vm:ConfirmationDialogViewModel"
+        Title="{Binding Title}"
+        Width="450" Height="200"
+        MinWidth="350" MinHeight="150"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    
+    <Window.Background>
+        <DynamicResource ResourceKey="PrimaryBackgroundBrush"/>
+    </Window.Background>
+    
+    <Design.DataContext>
+        <vm:ConfirmationDialogViewModel />
+    </Design.DataContext>
+    
+    <Grid RowDefinitions="*,Auto" Margin="20">
+        <!-- Message Content -->
+        <TextBlock Grid.Row="0" 
+                   Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Center"
+                   Margin="0,0,0,20"/>
+        
+        <!-- Buttons -->
+        <StackPanel Grid.Row="1" 
+                    Orientation="Horizontal" 
+                    HorizontalAlignment="Right"
+                    Spacing="10">
+            <Button Content="{Binding CancelButtonText}"
+                    Name="CancelButton"
+                    MinWidth="100"/>
+            <Button Content="{Binding ConfirmButtonText}"
+                    Name="ConfirmButton"
+                    MinWidth="100"
+                    Classes="accent"/>
+        </StackPanel>
+    </Grid>
+</Window>
+

@@ -17,6 +17,9 @@ public class MessageManagementViewModel : ViewModelBase
     private bool _isLoadingMessages;
     private ServiceBusMessage? _selectedMessage;
 
+    // Delegate for showing confirmation dialog
+    public Func<string, string, Task<bool>>? ShowConfirmationDialog { get; set; }
+
     public EntityTreeItemViewModel? SelectedEntity
     {
         get => _selectedEntity;
@@ -40,6 +43,8 @@ public class MessageManagementViewModel : ViewModelBase
 
     public ObservableCollection<ServiceBusMessage> Messages { get; } = new();
     public bool HasMessages => Messages.Count > 0;
+    public IEnumerable<ServiceBusMessage> SelectedMessages => Messages.Where(m => m.IsSelected);
+    public bool HasSelectedMessages => SelectedMessages.Any();
     public ServiceBusMessage? SelectedMessage
     {
         get => _selectedMessage;
@@ -58,6 +63,7 @@ public class MessageManagementViewModel : ViewModelBase
     }
 
     private readonly ReactiveCommand<Unit, Unit> _loadMessagesCommand;
+    public ReactiveCommand<Unit, Unit> DeleteMessagesCommand { get; }
 
     public MessageManagementViewModel(IServiceBusMessageService messageService, ILogger<MessageManagementViewModel>? logger)
     {
@@ -78,6 +84,9 @@ public class MessageManagementViewModel : ViewModelBase
         
         var canLoadMessages = this.WhenAnyValue(x => x.SelectedEntityIsManageable);
         _loadMessagesCommand = ReactiveCommand.CreateFromTask(LoadMessagesAsync, canLoadMessages);
+        
+        var canDeleteMessages = this.WhenAnyValue(x => x.HasMessages);
+        DeleteMessagesCommand = ReactiveCommand.CreateFromTask(DeleteMessagesWithConfirmationAsync, canDeleteMessages);
         
         this.WhenAnyValue(x => x.MaxMessagesToShow)
             .Subscribe(_ =>
@@ -182,5 +191,34 @@ public class MessageManagementViewModel : ViewModelBase
             _logger?.LogInformation("IsLoadingMessages set to false. Final state - Messages.Count: {Count}, HasMessages: {HasMessages}", 
                 Messages.Count, HasMessages);
         }
+    }
+
+    private async Task DeleteMessagesWithConfirmationAsync()
+    {
+        if (ShowConfirmationDialog == null)
+        {
+            _logger?.LogWarning("ShowConfirmationDialog is not set");
+            return;
+        }
+
+        var messageCount = SelectedMessages.Count();
+        var entityName = SelectedEntity?.Name ?? "unknown";
+        
+        var confirmed = await ShowConfirmationDialog(
+            "Delete Messages", 
+            $"Are you sure you want to remove {messageCount} message{(messageCount != 1 ? "s" : "")} from the {entityName}?");
+
+        if (confirmed)
+        {
+            await DeleteSelectedMessages();
+        }
+    }
+
+    // Placeholder method to be implemented later
+    private async Task DeleteSelectedMessages()
+    {
+        _logger?.LogInformation("DeleteSelectedMessages called - to be implemented");
+        // TODO: Implement actual message deletion logic
+        await Task.CompletedTask;
     }
 }

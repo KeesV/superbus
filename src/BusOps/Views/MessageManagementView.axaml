@@ -42,7 +42,7 @@
                                    FontSize="18"
                                    />
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
-                            <Button Classes="action-button" ToolTip.Tip="Delete messages">
+                            <Button Classes="action-button" ToolTip.Tip="Delete messages" Command="{Binding DeleteMessagesCommand}" IsEnabled="{Binding HasSelectedMessages}">
                                 <PathIcon Data="{DynamicResource DeleteMessage}" />
                             </Button>
                             <Button Classes="action-button" ToolTip.Tip="Re-send messages">
