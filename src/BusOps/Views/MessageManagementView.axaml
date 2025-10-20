@@ -42,10 +42,10 @@
                                    FontSize="18"
                                    />
                         <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
-                            <Button>
+                            <Button Classes="action-button" ToolTip.Tip="Delete messages">
                                 <PathIcon Data="{DynamicResource DeleteMessage}" />
                             </Button>
-                            <Button>
+                            <Button Classes="action-button" ToolTip.Tip="Re-send messages">
                                 <PathIcon Data="{DynamicResource MoveMessage}" />
                             </Button>
                             <ComboBox ItemsSource="{Binding MaxMessagesToShowOptions}"
