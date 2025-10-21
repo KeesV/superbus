@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
 using System.Reactive;
+using System.Reactive.Linq;
 using BusOps.Core.Interfaces;
 using BusOps.Core.Models;
 using BusOps.Design;
 using DynamicData;
+using DynamicData.Binding;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
 
@@ -41,10 +43,15 @@ public class MessageManagementViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _maxMessagesToShow, value);
     }
 
-    public ObservableCollection<ServiceBusMessage> Messages { get; } = new();
+    public ObservableCollection<ServiceBusMessage> Messages { get; } = [];
     public bool HasMessages => Messages.Count > 0;
-    public IEnumerable<ServiceBusMessage> SelectedMessages => Messages.Where(m => m.IsSelected);
-    public bool HasSelectedMessages => SelectedMessages.Any();
+    
+    private readonly ObservableAsPropertyHelper<IEnumerable<ServiceBusMessage>> _selectedMessages;
+    public IEnumerable<ServiceBusMessage> SelectedMessages => _selectedMessages.Value;
+    
+    private readonly ObservableAsPropertyHelper<bool> _hasSelectedMessages;
+    public bool HasSelectedMessages => _hasSelectedMessages.Value;
+    
     public ServiceBusMessage? SelectedMessage
     {
         get => _selectedMessage;
@@ -70,6 +77,21 @@ public class MessageManagementViewModel : ViewModelBase
         _messageService = messageService;
         _logger = logger;
         
+        // Set up reactive property for selected messages
+        // This observes property changes on all items in the Messages collection
+        var messagesObservable = Messages
+            .ToObservableChangeSet()
+            .AutoRefresh(m => m.IsSelected) // Watch for IsSelected property changes
+            .ToCollection();
+        
+        _selectedMessages = messagesObservable
+            .Select(messages => messages.Where(m => m.IsSelected))
+            .ToProperty(this, x => x.SelectedMessages, scheduler: RxApp.MainThreadScheduler);
+        
+        _hasSelectedMessages = messagesObservable
+            .Select(messages => messages.Any(m => m.IsSelected))
+            .ToProperty(this, x => x.HasSelectedMessages, scheduler: RxApp.MainThreadScheduler);
+        
         this.WhenAnyValue(x => x.SelectedEntity)
             .Subscribe(_ =>
             {
@@ -85,7 +107,7 @@ public class MessageManagementViewModel : ViewModelBase
         var canLoadMessages = this.WhenAnyValue(x => x.SelectedEntityIsManageable);
         _loadMessagesCommand = ReactiveCommand.CreateFromTask(LoadMessagesAsync, canLoadMessages);
         
-        var canDeleteMessages = this.WhenAnyValue(x => x.HasMessages);
+        var canDeleteMessages = this.WhenAnyValue(x => x.HasSelectedMessages);
         DeleteMessagesCommand = ReactiveCommand.CreateFromTask(DeleteMessagesWithConfirmationAsync, canDeleteMessages);
         
         this.WhenAnyValue(x => x.MaxMessagesToShow)
@@ -94,6 +116,8 @@ public class MessageManagementViewModel : ViewModelBase
                 _logger?.LogDebug("MaxMessagesToShow changed to {MaxMessagesToShow}", MaxMessagesToShow);
                 _loadMessagesCommand.Execute().Subscribe();
             });
+        
+        
     }
 
     public MessageManagementViewModel() : this(null!, null)
