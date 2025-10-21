@@ -92,11 +92,11 @@ public class MessageManagementViewModel : ViewModelBase
             .Subscribe(_ =>
             {
                 _logger?.LogDebug("MaxMessagesToShow changed to {MaxMessagesToShow}", MaxMessagesToShow);
-                _loadMessagesCommand?.Execute().Subscribe();
+                _loadMessagesCommand.Execute().Subscribe();
             });
     }
 
-    public MessageManagementViewModel() : this(null, null)
+    public MessageManagementViewModel() : this(null!, null)
     {
         if(!Avalonia.Controls.Design.IsDesignMode)
             throw new NotSupportedException("This constructor is only for design time.");

@@ -4,7 +4,6 @@ using System.Reactive.Linq;
 using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using BusOps.Core.Interfaces;
-using BusOps.Core.Models;
 using BusOps.Design;
 using BusOps.Services;
 using DynamicData;
@@ -25,10 +24,6 @@ public class MainWindowViewModel : ViewModelBase
     private string _statusText = "Ready";
     private string _connectionStatus = "No active connections";
     private EntityTreeItemViewModel? _selectedEntity;
-    private int _maxMessagesToShow = 100;
-    private bool _isLoadingMessages;
-    private ServiceBusMessage? _selectedMessage;
-    private bool? _selectAll = false;
 
     public string StatusText
     {
@@ -48,46 +43,8 @@ public class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isConnected, value);
     }
     
-    public int MaxMessagesToShow
-    {
-        get => _maxMessagesToShow;
-        set => this.RaiseAndSetIfChanged(ref _maxMessagesToShow, value);
-    }
-
-    public bool IsLoadingMessages
-    {
-        get => _isLoadingMessages;
-        set => this.RaiseAndSetIfChanged(ref _isLoadingMessages, value);
-    }
-
-    public ServiceBusMessage? SelectedMessage
-    {
-        get => _selectedMessage;
-        set => this.RaiseAndSetIfChanged(ref _selectedMessage, value);
-    }
-    
-    public bool HasSelectedMessage => SelectedMessage != null;
-    
-    public bool HasMessages => Messages.Count > 0;
-    
-    // public bool ShowNoSelectionMessage => !IsLoadingMessages && SelectedEntity == null;
-    //
-    // public bool ShowNoMessagesForEntity => !IsLoadingMessages && SelectedEntity != null 
-    //     && (SelectedEntity.Type == "Queue" || SelectedEntity.Type == "Subscription") 
-    //     && !HasMessages;
-    //
-    // public bool ShowNonMessageableEntityMessage => !IsLoadingMessages && SelectedEntity != null 
-    //     && SelectedEntity.Type != "Queue" && SelectedEntity.Type != "Subscription";
-
-    public ObservableCollection<int> MessageLimitOptions { get; } = new()
-    {
-        10, 25, 50, 100, 250, 500, 1000
-    };
-
     public ObservableCollection<ConnectionItemViewModel> Connections { get; } = new();
     
-    public ObservableCollection<ServiceBusMessage> Messages { get; } = new();
-
     public ReactiveCommand<Unit, Unit> AddConnectionCommand { get; }
     
     // This will be set by the view
@@ -128,44 +85,12 @@ public class MainWindowViewModel : ViewModelBase
         
         // Load connections on initialization
         _ = LoadConnectionsAsync();
-        
-        // Notify when Messages collection changes
-        Messages.CollectionChanged += (_, _) =>
-        {
-            this.RaisePropertyChanged(nameof(HasMessages));
-            //this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
-        };
-        
-        // // Watch for changes to SelectedEntity and MaxMessagesToShow
-        // this.WhenAnyValue(x => x.SelectedEntity, x => x.MaxMessagesToShow)
-        //     .Subscribe(tuple =>
-        //     {
-        //         this.RaisePropertyChanged(nameof(ShowNoSelectionMessage));
-        //         this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
-        //         this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
-        //         _ = LoadMessagesForSelectedEntityAsync();
-        //     });
-        //     
-        // // Watch for loading state changes
-        // this.WhenAnyValue(x => x.IsLoadingMessages)
-        //     .Subscribe(_ =>
-        //     {
-        //         this.RaisePropertyChanged(nameof(ShowNoSelectionMessage));
-        //         this.RaisePropertyChanged(nameof(ShowNoMessagesForEntity));
-        //         this.RaisePropertyChanged(nameof(ShowNonMessageableEntityMessage));
-        //     });
 
         this.WhenAnyValue(x => x.EntitiesTreeViewModel.SelectedEntity)
             .Subscribe(_ =>
             {
                 SelectedEntity = EntitiesTreeViewModel.SelectedEntity;
                 MessageManagementViewModel.SelectedEntity = SelectedEntity;
-            });
-        
-        this.WhenAnyValue(x => x.SelectedMessage)
-            .Subscribe(_ =>
-            {
-                this.RaisePropertyChanged(nameof(HasSelectedMessage));
             });
 
         if (!Avalonia.Controls.Design.IsDesignMode)
@@ -184,7 +109,7 @@ public class MainWindowViewModel : ViewModelBase
         null!,
         null!, 
         new EntitiesTreeViewModel(),
-        new MessageManagementViewModel(null, null))
+        new MessageManagementViewModel(null!, null))
     {
         if(!Avalonia.Controls.Design.IsDesignMode)
             throw new NotSupportedException("This constructor is only for Design mode.");
