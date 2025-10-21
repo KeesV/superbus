@@ -238,11 +238,66 @@ public class MessageManagementViewModel : ViewModelBase
         }
     }
 
-    // Placeholder method to be implemented later
     private async Task DeleteSelectedMessages()
     {
-        _logger?.LogInformation("DeleteSelectedMessages called - to be implemented");
-        // TODO: Implement actual message deletion logic
-        await Task.CompletedTask;
+        if (SelectedEntity == null)
+        {
+            _logger?.LogWarning("Cannot delete messages - SelectedEntity is null");
+            return;
+        }
+
+        var messagesToDelete = SelectedMessages.ToList();
+        _logger?.LogInformation("Deleting {Count} selected messages from {EntityType} {EntityName}", 
+            messagesToDelete.Count, SelectedEntity.Type, SelectedEntity.Name);
+
+        try
+        {
+            IsLoadingMessages = true;
+            
+            foreach (var message in messagesToDelete)
+            {
+                try
+                {
+                    if (SelectedEntity.Type == "Queue")
+                    {
+                        await _messageService.CompleteMessageAsync(SelectedEntity.Name, message);
+                        _logger?.LogDebug("Completed message {MessageId} from queue {QueueName}", 
+                            message.MessageId, SelectedEntity.Name);
+                    }
+                    else if (SelectedEntity.Type == "Subscription")
+                    {
+                        var topicName = SelectedEntity.Parent?.Name;
+                        if (string.IsNullOrEmpty(topicName))
+                        {
+                            _logger?.LogWarning("Could not find parent topic for subscription {SubscriptionName}", 
+                                SelectedEntity.Name);
+                            continue;
+                        }
+                        
+                        var subscriptionPath = $"{topicName}/{SelectedEntity.Name}";
+                        await _messageService.CompleteMessageAsync(subscriptionPath, message);
+                        _logger?.LogDebug("Completed message {MessageId} from subscription {SubscriptionPath}", 
+                            message.MessageId, subscriptionPath);
+                    }
+                    
+                    // Remove the message from the collection
+                    Messages.Remove(message);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Failed to delete message {MessageId}", message.MessageId);
+                }
+            }
+            
+            _logger?.LogInformation("Successfully deleted {Count} messages", messagesToDelete.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to delete selected messages");
+        }
+        finally
+        {
+            IsLoadingMessages = false;
+        }
     }
 }
