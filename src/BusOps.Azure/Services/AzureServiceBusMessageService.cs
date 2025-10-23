@@ -143,7 +143,6 @@ public class AzureServiceBusMessageService : IServiceBusMessageService, IDisposa
         return await _resiliencePipeline.ExecuteAsync(async (cancellationToken) =>
         {
             var messages = new List<Core.Models.ServiceBusMessage>();
-            var entityPath = $"{topicName}/subscriptions/{subscriptionName}";
             
             if (peekOnly)
             {
@@ -210,38 +209,119 @@ public class AzureServiceBusMessageService : IServiceBusMessageService, IDisposa
     {
         EnsureInitialized();
         
-        await _resiliencePipeline.ExecuteAsync(async _ =>
+        await _resiliencePipeline.ExecuteAsync(async cancellationToken =>
         {
-            // This requires the actual ServiceBusReceivedMessage which we don't have
-            // In a real implementation, we'd need to store received messages with their lock tokens
-            _logger.LogWarning("CompleteMessageAsync not fully implemented - requires lock token management");
-            await Task.CompletedTask;
+            // Determine the correct receiver based on the path
+            ServiceBusReceiver receiver;
+            if (queueOrSubscriptionPath.Contains("/subscriptions/"))
+            {
+                // It's a subscription path (topicName/subscriptions/subscriptionName)
+                var parts = queueOrSubscriptionPath.Split('/');
+                var topicName = parts[0];
+                var subscriptionName = parts[2];
+                receiver = GetOrCreateReceiver(topicName, subscriptionName, false);
+            }
+            else
+            {
+                // It's a queue
+                receiver = GetOrCreateReceiver(queueOrSubscriptionPath, false);
+            }
+
+            // Receive the specific message by sequence number to lock it
+            var receivedMessage = await ReceiveMessageBySequenceNumberAsync(
+                receiver, message.SequenceNumber, cancellationToken);
+            
+            if (receivedMessage == null)
+            {
+                throw new InvalidOperationException(
+                    $"Message with sequence number {message.SequenceNumber} not found or already processed.");
+            }
+
+            // Complete the message
+            await receiver.CompleteMessageAsync(receivedMessage, cancellationToken);
+            
+            _logger.LogInformation("Completed message {MessageId} (sequence {SequenceNumber}) from {Path}", 
+                message.MessageId, message.SequenceNumber, queueOrSubscriptionPath);
         });
     }
 
     public async Task AbandonMessageAsync(string queueOrSubscriptionPath, Core.Models.ServiceBusMessage message)
     {
         EnsureInitialized();
-        
-        await _resiliencePipeline.ExecuteAsync(async _ =>
+
+        await _resiliencePipeline.ExecuteAsync(async cancellationToken =>
         {
-            // This requires the actual ServiceBusReceivedMessage which we don't have
-            // In a real implementation, we'd need to store received messages with their lock tokens
-            _logger.LogWarning("AbandonMessageAsync not fully implemented - requires lock token management");
-            await Task.CompletedTask;
+            // Determine the correct receiver based on the path
+            ServiceBusReceiver receiver;
+            if (queueOrSubscriptionPath.Contains("/subscriptions/"))
+            {
+                // It's a subscription path (topicName/subscriptions/subscriptionName)
+                var parts = queueOrSubscriptionPath.Split('/');
+                var topicName = parts[0];
+                var subscriptionName = parts[2];
+                receiver = GetOrCreateReceiver(topicName, subscriptionName, false);
+            }
+            else
+            {
+                // It's a queue
+                receiver = GetOrCreateReceiver(queueOrSubscriptionPath, false);
+            }
+
+            // Receive the specific message by sequence number to lock it
+            var receivedMessage = await ReceiveMessageBySequenceNumberAsync(
+                receiver, message.SequenceNumber, cancellationToken);
+            
+            if (receivedMessage == null)
+            {
+                throw new InvalidOperationException(
+                    $"Message with sequence number {message.SequenceNumber} not found or already processed.");
+            }
+
+            // Abandon the message
+            await receiver.AbandonMessageAsync(receivedMessage, cancellationToken: cancellationToken);
+            
+            _logger.LogInformation("Abandoned message {MessageId} (sequence {SequenceNumber}) from {Path}", 
+                message.MessageId, message.SequenceNumber, queueOrSubscriptionPath);
         });
     }
 
     public async Task DeadLetterMessageAsync(string queueOrSubscriptionPath, Core.Models.ServiceBusMessage message, string reason)
     {
         EnsureInitialized();
-        
-        await _resiliencePipeline.ExecuteAsync(async _ =>
+
+        await _resiliencePipeline.ExecuteAsync(async cancellationToken =>
         {
-            // This requires the actual ServiceBusReceivedMessage which we don't have
-            // In a real implementation, we'd need to store received messages with their lock tokens
-            _logger.LogWarning("DeadLetterMessageAsync not fully implemented - requires lock token management");
-            await Task.CompletedTask;
+            // Determine the correct receiver based on the path
+            ServiceBusReceiver receiver;
+            if (queueOrSubscriptionPath.Contains("/subscriptions/"))
+            {
+                // It's a subscription path (topicName/subscriptions/subscriptionName)
+                var parts = queueOrSubscriptionPath.Split('/');
+                var topicName = parts[0];
+                var subscriptionName = parts[2];
+                receiver = GetOrCreateReceiver(topicName, subscriptionName, false);
+            }
+            else
+            {
+                // It's a queue
+                receiver = GetOrCreateReceiver(queueOrSubscriptionPath, false);
+            }
+
+            // Receive the specific message by sequence number to lock it
+            var receivedMessage = await ReceiveMessageBySequenceNumberAsync(
+                receiver, message.SequenceNumber, cancellationToken);
+            
+            if (receivedMessage == null)
+            {
+                throw new InvalidOperationException(
+                    $"Message with sequence number {message.SequenceNumber} not found or already processed.");
+            }
+
+            // Dead-letter the message with the provided reason
+            await receiver.DeadLetterMessageAsync(receivedMessage, reason, cancellationToken: cancellationToken);
+            
+            _logger.LogInformation("Dead-lettered message {MessageId} (sequence {SequenceNumber}) from {Path} with reason: {Reason}", 
+                message.MessageId, message.SequenceNumber, queueOrSubscriptionPath, reason);
         });
     }
 
@@ -362,6 +442,53 @@ public class AzureServiceBusMessageService : IServiceBusMessageService, IDisposa
         return receiver;
     }
 
+    /// <summary>
+    /// Receives a specific message by sequence number from the queue/subscription.
+    /// This locks the message so it can be completed, abandoned, or dead-lettered.
+    /// </summary>
+    private async Task<ServiceBusReceivedMessage?> ReceiveMessageBySequenceNumberAsync(
+        ServiceBusReceiver receiver, long sequenceNumber, CancellationToken cancellationToken)
+    {
+        // We need to receive messages until we find the one with the matching sequence number
+        // or determine it's no longer available
+        var maxAttempts = 100; // Prevent infinite loops
+        var batchSize = 10;
+        
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var messages = await receiver.ReceiveMessagesAsync(batchSize, TimeSpan.FromSeconds(1), cancellationToken);
+            
+            if (messages.Count == 0)
+            {
+                // No more messages available
+                return null;
+            }
+            
+            foreach (var message in messages)
+            {
+                if (message.SequenceNumber == sequenceNumber)
+                {
+                    // Found the message we're looking for
+                    // Abandon all other messages we received
+                    foreach (var otherMessage in messages.Where(m => m.SequenceNumber != sequenceNumber))
+                    {
+                        await receiver.AbandonMessageAsync(otherMessage, cancellationToken: cancellationToken);
+                    }
+                    
+                    return message;
+                }
+            }
+            
+            // Abandon all messages since we didn't find the target
+            foreach (var message in messages)
+            {
+                await receiver.AbandonMessageAsync(message, cancellationToken: cancellationToken);
+            }
+        }
+        
+        return null;
+    }
+
     private Core.Models.ServiceBusMessage ConvertToServiceBusMessage(ServiceBusReceivedMessage azureMessage)
     {
         var message = new Core.Models.ServiceBusMessage
@@ -376,7 +503,8 @@ public class AzureServiceBusMessageService : IServiceBusMessageService, IDisposa
             Body = Encoding.UTF8.GetString(azureMessage.Body),
             EnqueuedTime = azureMessage.EnqueuedTime,
             DeliveryCount = azureMessage.DeliveryCount,
-            SequenceNumber = azureMessage.SequenceNumber
+            SequenceNumber = azureMessage.SequenceNumber,
+            LockToken = azureMessage.LockToken
         };
 
         if (azureMessage.ScheduledEnqueueTime != default)
@@ -389,6 +517,7 @@ public class AzureServiceBusMessageService : IServiceBusMessageService, IDisposa
         {
             message.Properties[prop.Key] = prop.Value;
         }
+
 
         return message;
     }

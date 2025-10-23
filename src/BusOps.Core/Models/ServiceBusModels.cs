@@ -112,6 +112,7 @@ public class ServiceBusMessage : INotifyPropertyChanged
     public DateTimeOffset EnqueuedTime { get; set; }
     public int DeliveryCount { get; set; }
     public long SequenceNumber { get; set; }
+    public string? LockToken { get; set; }
 
     public bool IsSelected
     {
